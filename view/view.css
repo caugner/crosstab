@@ -1,0 +1,274 @@
+:root {
+  color-scheme: light dark;
+  --bg: light-dark(#f9f9fb, #1c1b22);
+  --card: light-dark(#fff, #2b2a33);
+  --text: light-dark(#15141a, #fbfbfe);
+  --muted: light-dark(#5b5b66, #afafba);
+  --hover: light-dark(#f0f0f4, #42414d);
+  --border: light-dark(#cfcfd8, #5b5b66);
+  --accent: light-dark(#7542e5, #ab71ff);
+  --dup: light-dark(#c45a00, #d9720b);
+  --card-border: linear-gradient(
+    to right,
+    light-dark(#b494ff, #9d7bf0),
+    light-dark(#dc8fb4, #c8789f),
+    light-dark(#f2a06c, #e08a55)
+  );
+  --field-hover: light-dark(#d3c8ec, #4a3f6e);
+  --chevron: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="%2315141a" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m3.5 6 4.5 4.5L12.5 6"/></svg>');
+  font:
+    15px/1.4 system-ui,
+    sans-serif;
+}
+
+/* light-dark() only takes colors, and a data URL cannot use currentColor. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --chevron: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="%23fbfbfe" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m3.5 6 4.5 4.5L12.5 6"/></svg>');
+  }
+}
+
+body {
+  margin: 0;
+  padding: 2rem;
+  background: var(--bg);
+  color: var(--text);
+}
+
+h1 {
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
+}
+
+#count {
+  color: var(--muted);
+  font-size: 1rem;
+  font-weight: normal;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.controls label {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  color: var(--muted);
+}
+
+input[type="search"],
+select {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+}
+
+select {
+  appearance: none;
+  padding-inline-end: 2.25rem;
+  border-color: var(--muted);
+  background: var(--card) var(--chevron) no-repeat right 0.75rem center / 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+select:hover {
+  background-color: var(--field-hover);
+}
+
+input[type="search"]:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+input[type="search"] {
+  width: 16rem;
+}
+
+#cards {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.column {
+  flex: 1;
+  min-width: 0;
+}
+
+.card {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border: 1.5px solid transparent;
+  border-radius: 0.75rem;
+  /* A gradient border that follows the radius, which border-image cannot. */
+  background:
+    linear-gradient(var(--card), var(--card)) padding-box,
+    var(--card-border) border-box;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.15);
+}
+
+.card h2 {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0.25rem 0 0.5rem 0.5rem;
+  font-size: 1.05rem;
+}
+
+.card h2 .name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card h2 .n {
+  flex: none;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: normal;
+}
+
+.card h3 {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0.5rem 0 0.25rem;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.card h3::before,
+.card h3::after {
+  flex: 1;
+  border-top: 1px solid var(--border);
+  content: "";
+}
+
+.close-all {
+  margin-inline-start: auto;
+  font-weight: normal;
+}
+
+.dot {
+  flex: none;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+}
+
+.card ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card li {
+  display: flex;
+  align-items: center;
+  border-radius: 0.4rem;
+}
+
+.card li:hover,
+.card li:focus-within {
+  background: var(--hover);
+}
+
+button {
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.tab {
+  display: flex;
+  flex: 1;
+  gap: 0.6rem;
+  align-items: center;
+  min-width: 0;
+  padding: 0.4rem 0.5rem;
+  text-align: start;
+}
+
+.tab img {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.tab .title,
+.tab .url {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tab .label {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tab .url {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.dup {
+  flex: none;
+  margin-inline-start: auto;
+  padding: 0 0.4rem;
+  border-radius: 0.6rem;
+  background: var(--dup);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.tab.active .title {
+  font-weight: 600;
+}
+
+.tab.discarded {
+  color: var(--muted);
+}
+
+.close {
+  flex: none;
+  padding: 0.25rem 0.6rem;
+  border-radius: 0.4rem;
+  color: var(--muted);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.close:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.more {
+  display: block;
+  margin: 0.25rem auto 0;
+  padding: 0.25rem 0.5rem;
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.empty {
+  color: var(--muted);
+}

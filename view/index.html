@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Crosstab</title>
+    <link rel="icon" href="../icons/icon.svg" />
+    <link rel="stylesheet" href="view.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Open tabs <span id="count" aria-live="polite"></span></h1>
+      <div class="controls">
+        <input
+          id="search"
+          type="search"
+          placeholder="Search open tabs"
+          aria-label="Search open tabs"
+          autofocus
+        />
+        <label>
+          Group by
+          <select id="group-by">
+            <option value="window">Window</option>
+            <option value="domain">Domain</option>
+            <option value="domainWindow">Domain + Window</option>
+            <option value="tabGroup">Tab group</option>
+            <option value="lastAccessed">Last accessed</option>
+            <option value="created">Created</option>
+          </select>
+        </label>
+        <label>
+          Sort by
+          <select id="sort-by">
+            <option value="recent">Recent activity</option>
+            <option value="order">Tab order</option>
+            <option value="title">Title</option>
+            <option value="url">URL</option>
+          </select>
+        </label>
+        <label>
+          Display
+          <select id="label">
+            <option value="title">Title</option>
+            <option value="url">URL</option>
+            <option value="both">Both</option>
+          </select>
+        </label>
+        <label>
+          Filter
+          <select id="filter">
+            <option value="">All</option>
+          </select>
+        </label>
+      </div>
+    </header>
+    <main id="cards"></main>
+    <script type="module" src="main.js"></script>
+  </body>
+</html>

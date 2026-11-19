@@ -1,0 +1,38 @@
+{
+  "name": "crosstab",
+  "version": "0.1.0",
+  "description": "Firefox extension with an overview of all open tabs across windows.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "lint:ext": "web-ext lint",
+    "start": "web-ext run",
+    "build": "web-ext build --overwrite-dest",
+    "typecheck": "tsc",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run lint:ext && npm test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/firefox-webext-browser": "^143.0.1",
+    "eslint": "^10.15.0",
+    "globals": "^17.14.0",
+    "prettier": "^3.10.1",
+    "typescript": "^7.0.2",
+    "web-ext": "^10.8.0"
+  },
+  "webExt": {
+    "ignoreFiles": [
+      "test",
+      "*.md",
+      "package.json",
+      "package-lock.json",
+      "eslint.config.js",
+      "tsconfig.json",
+      "**/*.d.ts"
+    ]
+  }
+}
