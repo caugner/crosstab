@@ -30,3 +30,11 @@ npm start      # run in a temporary Firefox profile
 npm run check  # format, lint, type check, web-ext lint, tests
 npm run build  # package into web-ext-artifacts/
 ```
+
+To sign an unlisted build for self-distribution, create [AMO API credentials](https://addons.mozilla.org/developers/addon/api/key/), then:
+
+```sh
+WEB_EXT_API_KEY=... WEB_EXT_API_SECRET=... npm run sign
+```
+
+Bump `version` in `manifest.json` before each signing, as AMO rejects versions it has seen before.
