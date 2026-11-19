@@ -29,6 +29,7 @@
     "ignoreFiles": [
       "test",
       "*.md",
+      "release-please-config.json",
       "package.json",
       "package-lock.json",
       "eslint.config.js",

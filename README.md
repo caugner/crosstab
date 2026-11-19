@@ -31,10 +31,8 @@ npm run check  # format, lint, type check, web-ext lint, tests
 npm run build  # package into web-ext-artifacts/
 ```
 
-To sign an unlisted build for self-distribution, create [AMO API credentials](https://addons.mozilla.org/developers/addon/api/key/), then:
+## Releasing
 
-```sh
-WEB_EXT_API_KEY=... WEB_EXT_API_SECRET=... npm run sign
-```
+[release-please](https://github.com/googleapis/release-please) keeps a release PR open based on [conventional commits](https://www.conventionalcommits.org/). Merging it bumps the version, tags a GitHub release, signs the extension as unlisted on AMO, and attaches the `.xpi` to the release.
 
-Bump `version` in `manifest.json` before each signing, as AMO rejects versions it has seen before.
+Signing needs the `AMO_JWT_ISSUER` and `AMO_JWT_SECRET` repository secrets ([AMO API credentials](https://addons.mozilla.org/developers/addon/api/key/)).
