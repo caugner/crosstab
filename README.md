@@ -33,6 +33,6 @@ npm run build  # package into web-ext-artifacts/
 
 ## Releasing
 
-[release-please](https://github.com/googleapis/release-please) keeps a release PR open based on [conventional commits](https://www.conventionalcommits.org/). Merging it bumps the version, tags a GitHub release, signs the extension as unlisted on AMO, and attaches the `.xpi` to the release.
+[release-please](https://github.com/googleapis/release-please) keeps a release PR open based on [conventional commits](https://www.conventionalcommits.org/). Merging it bumps the version, tags a GitHub release, and submits the extension to [AMO](https://addons.mozilla.org/) as a listed version, which is published once it passes review.
 
 Signing needs the `AMO_JWT_ISSUER` and `AMO_JWT_SECRET` repository secrets ([AMO API credentials](https://addons.mozilla.org/developers/addon/api/key/)).
