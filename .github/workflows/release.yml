@@ -24,7 +24,7 @@ jobs:
     if: needs.release-please.outputs.release_created == 'true'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     env:
       TAG: ${{ needs.release-please.outputs.tag_name }}
     steps:
@@ -42,8 +42,3 @@ jobs:
         env:
           WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
           WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
-      - run: |
-          mv web-ext-artifacts/*.xpi "crosstab-${TAG#v}.xpi"
-          gh release upload "$TAG" "crosstab-${TAG#v}.xpi"
-        env:
-          GH_TOKEN: ${{ github.token }}
