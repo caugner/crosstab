@@ -1,0 +1,4 @@
+# Rewritten by release-please
+.release-please-manifest.json
+CHANGELOG.md
+manifest.json
