@@ -1,15 +1,21 @@
 {
   "manifest_version": 3,
   "name": "Crosstab",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Overview of all open tabs across windows: search, group, and sort them, find duplicates, and close them.",
   "icons": {
     "48": "icons/icon.svg",
     "96": "icons/icon.svg"
   },
-  "permissions": ["tabs", "tabGroups", "sessions"],
+  "permissions": [
+    "tabs",
+    "tabGroups",
+    "sessions"
+  ],
   "background": {
-    "scripts": ["background.js"]
+    "scripts": [
+      "background.js"
+    ]
   },
   "action": {
     "default_title": "Open Crosstab",
@@ -20,7 +26,9 @@
       "id": "crosstab@caugner.github.io",
       "strict_min_version": "142.0",
       "data_collection_permissions": {
-        "required": ["none"]
+        "required": [
+          "none"
+        ]
       }
     }
   }
