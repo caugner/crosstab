@@ -1,6 +1,6 @@
 {
   "name": "crosstab",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Firefox extension with an overview of all open tabs across windows.",
   "private": true,
   "type": "module",
