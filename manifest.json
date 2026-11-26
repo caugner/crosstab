@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Crosstab",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Overview of all open tabs across windows: search, group, and sort them, find duplicates, and close them.",
   "icons": {
     "48": "icons/icon.svg",
