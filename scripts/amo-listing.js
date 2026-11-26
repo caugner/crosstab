@@ -52,6 +52,12 @@ async function request(url, method, body) {
     body: json ? JSON.stringify(body) : body,
   });
   const text = await response.text();
+  if (response.status === 429) {
+    const seconds = Number(response.headers.get("Retry-After")) || 60;
+    console.log(`Throttled, retrying in ${seconds}s`);
+    await new Promise((resolve) => setTimeout(resolve, seconds * 1000));
+    return request(url, method, body);
+  }
   if (!response.ok) {
     throw new Error(`${method} ${url}: ${response.status} ${text}`);
   }
