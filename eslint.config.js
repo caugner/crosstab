@@ -10,6 +10,21 @@ export default [
     },
   },
   {
+    files: ["scripts/**/*.js", "listing/**/*.js"],
+    languageOptions: { globals: globals.node },
+  },
+  {
+    files: ["scripts/screenshots.js"],
+    // Some functions are passed to and run in the Crosstab page.
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.browser,
+        ...globals.webextensions,
+      },
+    },
+  },
+  {
     files: ["background.js"],
     languageOptions: { sourceType: "script" },
   },
