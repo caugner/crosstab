@@ -16,12 +16,22 @@ import { assignColumns, columnCount, rankTabs } from "./lib/layout.js";
 import { preserveFocus } from "./focus.js";
 import { readChoice } from "./lib/settings.js";
 import { el, LABEL_MODES, renderColumns, renderEmpty } from "./render.js";
-import { closeTabs, focusTab, loadTabData, onTabDataChanged } from "./tabs.js";
+import {
+  closeTabs,
+  focusTab,
+  loadTabData,
+  onTabDataChanged,
+  prepareMerge,
+  runMerge,
+  undoMerge,
+} from "./tabs.js";
 
 const COLUMN_MIN_WIDTH = 300;
 const RELOAD_DELAY = 100;
 /** Reload at least this often during a steady stream of tab events. */
 const RELOAD_MAX_WAIT = 1000;
+/** `sessionStorage` key of the layout before the last merge. */
+const UNDO_KEY = "mergeUndo";
 
 const state = {
   groupBy: readChoice(localStorage, "groupBy", Object.keys(GROUPINGS)),
@@ -36,6 +46,7 @@ const state = {
   /** @type {TabData} */
   data: {
     tabs: [],
+    mergeableWindows: 1,
     windowOrder: new Map(),
     currentWindowId: -1,
     tabGroups: new Map(),
@@ -64,6 +75,9 @@ const $groupBy = byId("group-by", HTMLSelectElement);
 const $sortBy = byId("sort-by", HTMLSelectElement);
 const $filter = byId("filter", HTMLSelectElement);
 const $label = byId("label", HTMLSelectElement);
+const $merge = byId("merge", HTMLButtonElement);
+const $mergeGroups = byId("merge-groups", HTMLButtonElement);
+const $undoMerge = byId("undo-merge", HTMLButtonElement);
 
 let latestLoad = 0;
 async function load() {
@@ -82,6 +96,7 @@ async function load() {
   }
   state.data = data;
   updateFilter();
+  updateMergeButtons();
   render();
 }
 
@@ -125,6 +140,50 @@ function updateFilter() {
     );
   }
   $filter.value = state.filter;
+}
+
+function updateMergeButtons() {
+  const disabled = state.data.mergeableWindows < 2;
+  $merge.disabled = disabled;
+  $mergeGroups.disabled = disabled;
+  $undoMerge.hidden = sessionStorage.getItem(UNDO_KEY) === null;
+}
+
+/**
+ * @param {number} count
+ * @param {string} noun
+ */
+function plural(count, noun) {
+  return `${count} ${noun}${count === 1 ? "" : "s"}`;
+}
+
+/** @param {boolean} asGroups */
+async function mergeWindows(asGroups) {
+  const plan = await prepareMerge(asGroups);
+  const question = `Merge ${plural(plan.windowCount, "window")} (${plural(plan.tabCount, "tab")}) into this window${asGroups ? " as tab groups" : ""}?`;
+  if (!plan.windowCount || !confirm(question)) {
+    return;
+  }
+  // Saved first, so a merge that fails halfway can still be undone.
+  sessionStorage.setItem(UNDO_KEY, JSON.stringify(plan.snapshot));
+  updateMergeButtons();
+  await runMerge(plan);
+}
+
+async function undoLastMerge() {
+  const saved = sessionStorage.getItem(UNDO_KEY);
+  if (saved === null) {
+    return;
+  }
+  sessionStorage.removeItem(UNDO_KEY);
+  updateMergeButtons();
+  await undoMerge(JSON.parse(saved));
+}
+
+/** @param {unknown} error */
+function reportError(error) {
+  console.error(error);
+  scheduleLoad();
 }
 
 /**
@@ -238,6 +297,16 @@ for (const [$select, key] of /** @type {const} */ ([
     renderFresh();
   });
 }
+
+$merge.addEventListener("click", () => {
+  mergeWindows(false).catch(reportError);
+});
+$mergeGroups.addEventListener("click", () => {
+  mergeWindows(true).catch(reportError);
+});
+$undoMerge.addEventListener("click", () => {
+  undoLastMerge().catch(reportError);
+});
 
 onTabDataChanged(scheduleLoad);
 

@@ -23,6 +23,8 @@ interface TabGroupInfo {
 
 interface TabData {
   tabs: TabInfo[];
+  /** Windows with the same privacy as the current one, including it. */
+  mergeableWindows: number;
   /** Window ID to position in the window list. */
   windowOrder: Map<number, number>;
   currentWindowId: number;
@@ -50,3 +52,68 @@ interface Bucket extends Section {
 }
 
 type TabComparator = (a: TabInfo, b: TabInfo) => number;
+
+interface LayoutTab {
+  id: number;
+  pinned: boolean;
+  groupId: number;
+}
+
+interface LayoutWindow {
+  id: number;
+  incognito: boolean;
+  geometry: {
+    state?: browser.windows.WindowState;
+    left?: number;
+    top?: number;
+    width?: number;
+    height?: number;
+  };
+  /** In tab order. */
+  tabs: LayoutTab[];
+}
+
+type MergeStep =
+  | { type: "moveTabs"; tabIds: number[]; index: number }
+  | { type: "moveGroup"; groupId: number }
+  | { type: "group"; tabIds: number[]; title: string; color: string };
+
+interface MergePlan {
+  steps: MergeStep[];
+  /** Windows merged into the target. */
+  windowCount: number;
+  /** Tabs moved into the target. */
+  tabCount: number;
+}
+
+interface SavedGroup {
+  id: number;
+  title?: string;
+  color: string;
+  collapsed: boolean;
+}
+
+interface LayoutSnapshot {
+  targetWindowId: number;
+  windows: LayoutWindow[];
+  groups: SavedGroup[];
+}
+
+type WindowCreateData = Pick<
+  browser.windows._CreateCreateData,
+  "incognito" | "state" | "left" | "top" | "width" | "height"
+>;
+
+interface RestoreWindow {
+  /** Set if the window still exists; otherwise it is recreated. */
+  windowId?: number;
+  createData: WindowCreateData;
+  pinnedTabIds: number[];
+  unpinnedTabIds: number[];
+  groups: {
+    tabIds: number[];
+    title?: string;
+    color: string;
+    collapsed: boolean;
+  }[];
+}
