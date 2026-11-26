@@ -1,4 +1,5 @@
 import { countUrls } from "./lib/grouping.js";
+import { planMerge, planRestore, snapshotLayout } from "./lib/merge.js";
 
 const VIEW_URL = browser.runtime.getURL("view/index.html");
 
@@ -66,11 +67,148 @@ export async function loadTabData() {
 
   return {
     tabs,
+    mergeableWindows: windows.filter(
+      (win) => win.incognito === currentWindow.incognito,
+    ).length,
     urlCounts: countUrls(tabs),
     windowOrder: new Map(windows.map((win, i) => [win.id ?? -1, i])),
     currentWindowId: currentWindow.id ?? -1,
     tabGroups: new Map(groups.map((group) => [group.id, group])),
   };
+}
+
+/**
+ * @param {browser.windows.Window} win
+ * @returns {LayoutWindow}
+ */
+function toLayoutWindow({
+  id,
+  incognito,
+  state,
+  left,
+  top,
+  width,
+  height,
+  tabs,
+}) {
+  return {
+    id: id ?? -1,
+    incognito,
+    geometry: { state, left, top, width, height },
+    tabs: (tabs ?? []).map((tab) => ({
+      id: tab.id ?? -1,
+      pinned: tab.pinned,
+      groupId: tab.groupId ?? -1,
+    })),
+  };
+}
+
+/**
+ * Plans merging all windows into the one showing this view.
+ *
+ * @param {boolean} asGroups Put each window's ungrouped tabs in a tab group.
+ */
+export async function prepareMerge(asGroups) {
+  const [windows, currentWindow, viewTab, groups] = await Promise.all([
+    browser.windows.getAll({ populate: true, windowTypes: ["normal"] }),
+    browser.windows.getCurrent(),
+    browser.tabs.getCurrent(),
+    browser.tabGroups.query({}),
+  ]);
+  const layout = windows.map(toLayoutWindow);
+  const targetWindowId = currentWindow.id ?? -1;
+  return {
+    targetWindowId,
+    snapshot: snapshotLayout(layout, groups, targetWindowId),
+    ...planMerge(layout, { targetWindowId, viewTabId: viewTab?.id, asGroups }),
+  };
+}
+
+/** @param {{targetWindowId: number, steps: MergeStep[]}} plan */
+export async function runMerge({ targetWindowId: windowId, steps }) {
+  for (const step of steps) {
+    switch (step.type) {
+      case "moveTabs":
+        await browser.tabs.move(step.tabIds, { windowId, index: step.index });
+        break;
+      case "moveGroup":
+        await browser.tabGroups.move(step.groupId, { windowId, index: -1 });
+        break;
+      case "group": {
+        const groupId = await browser.tabs.group({
+          tabIds: step.tabIds,
+          createProperties: { windowId },
+        });
+        await browser.tabGroups.update(groupId, {
+          title: step.title,
+          color: /** @type {browser.tabGroups.Color} */ (step.color),
+        });
+        break;
+      }
+    }
+  }
+}
+
+/**
+ * Puts tabs back into their windows and groups as recorded before a merge.
+ *
+ * @param {LayoutSnapshot} snapshot
+ */
+export async function undoMerge(snapshot) {
+  const [windows, currentWindow] = await Promise.all([
+    browser.windows.getAll({ populate: true, windowTypes: ["normal"] }),
+    browser.windows.getCurrent(),
+  ]);
+  const liveTabs = new Map(
+    windows.flatMap((win) => win.tabs ?? []).map((tab) => [tab.id ?? -1, tab]),
+  );
+  const restore = planRestore(snapshot, {
+    tabIds: new Set(liveTabs.keys()),
+    windowIds: new Set(windows.map((win) => win.id ?? -1)),
+  });
+
+  for (const win of restore) {
+    const { pinnedTabIds, unpinnedTabIds, groups } = win;
+    const tabIds = [...pinnedTabIds, ...unpinnedTabIds];
+    await browser.tabs.ungroup(tabIds);
+    await Promise.all(
+      tabIds
+        .filter((id) => liveTabs.get(id)?.pinned !== pinnedTabIds.includes(id))
+        .map((id) =>
+          browser.tabs.update(id, { pinned: pinnedTabIds.includes(id) }),
+        ),
+    );
+
+    const windowId =
+      win.windowId ??
+      (await browser.windows.create({ ...win.createData, tabId: tabIds[0] }))
+        .id;
+    if (pinnedTabIds.length) {
+      await browser.tabs.move(pinnedTabIds, { windowId, index: 0 });
+    }
+    if (unpinnedTabIds.length) {
+      const pinned = await browser.tabs.query({ windowId, pinned: true });
+      await browser.tabs.move(unpinnedTabIds, {
+        windowId,
+        index: pinned.length,
+      });
+    }
+
+    for (const { tabIds: members, title, color, collapsed } of groups) {
+      const groupId = await browser.tabs.group({
+        tabIds: members,
+        createProperties: { windowId },
+      });
+      await browser.tabGroups.update(groupId, {
+        title,
+        color: /** @type {browser.tabGroups.Color} */ (color),
+        collapsed,
+      });
+    }
+  }
+  if (currentWindow.id !== undefined) {
+    await browser.windows.update(currentWindow.id, { focused: true });
+  }
 }
 
 /** @param {TabInfo} tab */

@@ -9,6 +9,7 @@ A Firefox extension that shows all open tabs across windows on one page, so you 
 - **Search** by title or URL, and **filter** to duplicates or a single domain.
 - **Duplicates** (same URL, ignoring the `#fragment`) get a `×N` badge. `about:` pages are not counted.
 - **Click** a tab to switch to it, or close a single tab or a whole group (with confirmation).
+- **Merge windows** moves all tabs into the Crosstab window, with the Crosstab tab first. **Merge as groups** also puts each window's ungrouped tabs into a `Window N` tab group. Existing tab groups move as they are, and private windows are merged only with each other. **Undo merge** restores the previous windows and groups while the Crosstab tab stays open.
 - Updates live as tabs change, and keeps items in place while the pointer is over them.
 
 Clicking the toolbar button opens Crosstab, or switches to it if it is already open.
