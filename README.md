@@ -32,6 +32,15 @@ npm run check  # format, lint, type check, web-ext lint, tests
 npm run build  # package into web-ext-artifacts/
 ```
 
+## AMO listing
+
+The listing description and links live in `amo-metadata.json` and are applied on every release. The icon and screenshots live in `listing/`.
+
+```sh
+npm run screenshots  # recapture listing/screenshots/ in headless Firefox (needs network)
+AMO_JWT_ISSUER=... AMO_JWT_SECRET=... npm run listing  # upload metadata, icon, and screenshots
+```
+
 ## Releasing
 
 [release-please](https://github.com/googleapis/release-please) keeps a release PR open based on [conventional commits](https://www.conventionalcommits.org/). Merging it bumps the version, tags a GitHub release, and submits the extension to [AMO](https://addons.mozilla.org/) as a listed version, which is published once it passes review.
