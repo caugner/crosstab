@@ -25,7 +25,12 @@ export const GROUPINGS = {
       ...(tab.windowId === currentWindowId ? ["Current"] : []),
     ];
     const suffix = notes.length ? ` (${notes.join(", ")})` : "";
-    return { key: tab.windowId, label: `Window ${order + 1}${suffix}`, order };
+    return {
+      key: tab.windowId,
+      label: `Window ${order + 1}${suffix}`,
+      order,
+      current: tab.windowId === currentWindowId,
+    };
   },
   domain(tab) {
     const domain = domainOf(tab.url);

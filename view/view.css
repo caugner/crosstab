@@ -8,12 +8,13 @@
   --border: light-dark(#cfcfd8, #5b5b66);
   --accent: light-dark(#7542e5, #ab71ff);
   --dup: light-dark(#c45a00, #d9720b);
-  --card-border: linear-gradient(
+  --card-border-gradient: linear-gradient(
     to right,
     light-dark(#b494ff, #9d7bf0),
     light-dark(#dc8fb4, #c8789f),
     light-dark(#f2a06c, #e08a55)
   );
+  --card-border: linear-gradient(var(--border), var(--border));
   --field-hover: light-dark(#d3c8ec, #4a3f6e);
   --chevron: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="%2315141a" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m3.5 6 4.5 4.5L12.5 6"/></svg>');
   font:
@@ -142,7 +143,13 @@ input[type="search"] {
   background:
     linear-gradient(var(--card), var(--card)) padding-box,
     var(--card-border) border-box;
-  box-shadow: 0 1px 4px rgb(0 0 0 / 0.15);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
+}
+
+.card.current,
+#cards:not([data-group-by="window"]) .card:hover,
+#cards:not([data-group-by="window"]) .card:focus-within {
+  --card-border: var(--card-border-gradient);
 }
 
 .card h2 {

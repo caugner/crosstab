@@ -39,6 +39,8 @@ interface BucketInfo {
   /** Buckets sort by this first; without it, largest first. */
   order?: number;
   color?: string;
+  /** Set for the window showing the view. */
+  current?: boolean;
 }
 
 interface Section extends BucketInfo {
