@@ -4,7 +4,7 @@ import {
   visibleSections,
   visibleTabs,
 } from "./lib/layout.js";
-import { displayPath, displayUrl, duplicateKey } from "./lib/url.js";
+import { displayPath, displayUrl, domainOf, duplicateKey } from "./lib/url.js";
 
 const FALLBACK_ICON = "../icons/globe.svg";
 
@@ -67,6 +67,14 @@ function tabLabel(tab, mode, bucket) {
       { className: "label" },
       el("span", { className: "url", textContent: url }),
       title,
+    );
+  }
+  if (bucket.mixed) {
+    return el(
+      "span",
+      { className: "label" },
+      title,
+      el("span", { className: "url", textContent: domainOf(tab.url) }),
     );
   }
   return title;
