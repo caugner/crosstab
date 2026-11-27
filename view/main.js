@@ -48,7 +48,7 @@ const state = {
   /** @type {TabData} */
   data: {
     tabs: [],
-    mergeableWindows: 1,
+    mergeable: { windows: 0, tabs: 0, groups: 0 },
     windowOrder: new Map(),
     currentWindowId: -1,
     tabGroups: new Map(),
@@ -81,6 +81,9 @@ const $filter = byId("filter", HTMLSelectElement);
 const $label = byId("label", HTMLSelectElement);
 const $customize = byId("customize", HTMLButtonElement);
 const $customizePanel = byId("customize-panel", HTMLElement);
+const $reorganise = byId("reorganise", HTMLButtonElement);
+const $reorganiseMenu = byId("reorganise-menu", HTMLElement);
+const $reorganiseItems = [...$reorganiseMenu.querySelectorAll("button")];
 const $merge = byId("merge", HTMLButtonElement);
 const $mergeGroups = byId("merge-groups", HTMLButtonElement);
 const $undoMerge = byId("undo-merge", HTMLButtonElement);
@@ -149,10 +152,17 @@ function updateFilter() {
 }
 
 function updateMergeButtons() {
-  const disabled = state.data.mergeableWindows < 2;
-  $merge.disabled = disabled;
-  $mergeGroups.disabled = disabled;
-  $merge.hidden = $mergeGroups.hidden = state.groupBy !== "window";
+  const { windows, tabs, groups } = state.data.mergeable;
+  const disabled = windows === 0;
+  if (!disabled) {
+    $merge.textContent = `Move ${plural(tabs, "tab")} from ${plural(windows, "window")} into this window`;
+    $mergeGroups.textContent = `Move ${plural(windows, "window")} (${plural(tabs, "tab")}) into this window as ${plural(groups, "group")}`;
+  }
+  $reorganise.disabled = disabled;
+  $reorganise.hidden = state.groupBy !== "window";
+  if ($reorganise.disabled || $reorganise.hidden) {
+    $reorganiseMenu.hidePopover();
+  }
   $undoMerge.hidden = sessionStorage.getItem(UNDO_KEY) === null;
 }
 
@@ -167,7 +177,7 @@ function plural(count, noun) {
 /** @param {boolean} asGroups */
 async function mergeWindows(asGroups) {
   const plan = await prepareMerge(asGroups);
-  const question = `Merge ${plural(plan.windowCount, "window")} (${plural(plan.tabCount, "tab")}) into this window${asGroups ? " as tab groups" : ""}?`;
+  const question = `Move ${plural(plan.windowCount, "window")} (${plural(plan.tabCount, "tab")}) into this window${asGroups ? ` as ${plural(plan.groupCount, "group")}` : ""}?`;
   if (!plan.windowCount || !confirm(question)) {
     return;
   }
@@ -375,12 +385,42 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-$merge.addEventListener("click", () => {
-  mergeWindows(false).catch(reportError);
+// Firefox lacks CSS anchor positioning before 147, so align the menu manually.
+$reorganiseMenu.addEventListener("beforetoggle", (event) => {
+  if (/** @type {ToggleEvent} */ (event).newState === "open") {
+    const rect = $reorganise.getBoundingClientRect();
+    $reorganiseMenu.style.top = `${rect.bottom + 4}px`;
+    $reorganiseMenu.style.right = `${document.documentElement.clientWidth - rect.right}px`;
+  }
 });
-$mergeGroups.addEventListener("click", () => {
-  mergeWindows(true).catch(reportError);
+$reorganiseMenu.addEventListener("toggle", (event) => {
+  const open = /** @type {ToggleEvent} */ (event).newState === "open";
+  $reorganise.setAttribute("aria-expanded", String(open));
+  if (open) {
+    $reorganiseItems[0].focus();
+  }
 });
+$reorganiseMenu.addEventListener("keydown", (event) => {
+  const step = { ArrowDown: 1, ArrowUp: -1 }[event.key];
+  if (!step) {
+    return;
+  }
+  event.preventDefault();
+  const count = $reorganiseItems.length;
+  const index = $reorganiseItems.findIndex(
+    ($item) => $item === document.activeElement,
+  );
+  $reorganiseItems[(index + step + count) % count].focus();
+});
+for (const [$item, asGroups] of /** @type {const} */ ([
+  [$merge, false],
+  [$mergeGroups, true],
+])) {
+  $item.addEventListener("click", () => {
+    $reorganiseMenu.hidePopover();
+    mergeWindows(asGroups).catch(reportError);
+  });
+}
 $undoMerge.addEventListener("click", () => {
   undoLastMerge().catch(reportError);
 });

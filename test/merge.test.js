@@ -126,13 +126,28 @@ test("planMerge", async (t) => {
   }
 });
 
-test("planMerge counts merged windows and tabs", () => {
-  const windows = [win(1, [10]), win(2, [20, 21]), win(3, [30])];
-  const { windowCount, tabCount } = planMerge(windows, {
-    targetWindowId: 1,
-    asGroups: false,
-  });
-  assert.deepEqual({ windowCount, tabCount }, { windowCount: 2, tabCount: 3 });
+test("planMerge counts merged windows, tabs, and groups", async (t) => {
+  const windows = [
+    win(1, [10]),
+    win(2, [[20, { groupId: 5 }], 21]),
+    win(3, [[30, pinned]]),
+  ];
+  for (const { asGroups, groupCount } of [
+    { asGroups: false, groupCount: 1 },
+    { asGroups: true, groupCount: 2 },
+  ]) {
+    await t.test(`asGroups: ${asGroups}`, () => {
+      const plan = planMerge(windows, { targetWindowId: 1, asGroups });
+      assert.deepEqual(
+        {
+          windowCount: plan.windowCount,
+          tabCount: plan.tabCount,
+          groupCount: plan.groupCount,
+        },
+        { windowCount: 2, tabCount: 3, groupCount },
+      );
+    });
+  }
 });
 
 test("snapshotLayout keeps the target's privacy and their groups", () => {

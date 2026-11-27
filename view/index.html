@@ -20,11 +20,25 @@
           ></span>
         </h1>
         <div class="actions">
-          <button id="merge" type="button" disabled>Merge windows</button>
-          <button id="merge-groups" type="button" disabled>
-            Merge as groups
+          <button
+            id="reorganise"
+            type="button"
+            popovertarget="reorganise-menu"
+            aria-haspopup="menu"
+            aria-expanded="false"
+            disabled
+          >
+            Reorganise
           </button>
-          <button id="undo-merge" type="button" hidden>Undo merge</button>
+          <div id="reorganise-menu" popover role="menu">
+            <button type="button" role="menuitem" id="merge">
+              Move all tabs into this window
+            </button>
+            <button type="button" role="menuitem" id="merge-groups">
+              Move windows into this window as tab groups
+            </button>
+          </div>
+          <button id="undo-merge" type="button" hidden>Undo reorganise</button>
         </div>
       </div>
       <div class="controls">
