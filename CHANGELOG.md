@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/caugner/crosstab/compare/crosstab-v0.3.0...crosstab-v0.4.0) (2026-11-27)
+
+
+### Features
+
+* **view:** mark tab group members with color stripe ([#43](https://github.com/caugner/crosstab/issues/43)) ([b9b4c69](https://github.com/caugner/crosstab/commit/b9b4c69d94d10b9cfddbba8a35d8101e91623694))
+
 ## [0.3.0](https://github.com/caugner/crosstab/compare/crosstab-v0.2.0...crosstab-v0.3.0) (2026-11-27)
 
 
