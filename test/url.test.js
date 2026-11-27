@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { displayUrl, domainOf, duplicateKey } from "../view/lib/url.js";
+import {
+  displayPath,
+  displayUrl,
+  domainOf,
+  duplicateKey,
+} from "../view/lib/url.js";
 
 function table(fn, cases) {
   return async (t) => {
@@ -52,5 +57,20 @@ test(
     { input: "http://example.com/a", expected: "example.com/a" },
     { input: "about:blank", expected: "about:blank" },
     { input: "file:///https://x", expected: "file:///https://x" },
+  ]),
+);
+
+test(
+  "displayPath",
+  table(displayPath, [
+    { input: "https://example.com/", expected: "/" },
+    { input: "https://example.com", expected: "/" },
+    { input: "https://example.com/a/b", expected: "/a/b" },
+    { input: "http://example.com/a?q=1#h", expected: "/a?q=1#h" },
+    { input: "https://example.com/?q=1", expected: "/?q=1" },
+    { input: "about:debugging", expected: "about:debugging" },
+    { input: "file:///tmp/a.html", expected: "file:///tmp/a.html" },
+    { input: "not a url", expected: "not a url" },
+    { input: "", expected: "" },
   ]),
 );

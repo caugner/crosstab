@@ -41,6 +41,8 @@ interface BucketInfo {
   color?: string;
   /** Set for the window showing the view. */
   current?: boolean;
+  /** Set if all tabs share this domain. */
+  domain?: string;
 }
 
 interface Section extends BucketInfo {

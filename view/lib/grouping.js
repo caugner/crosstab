@@ -34,7 +34,7 @@ export const GROUPINGS = {
   },
   domain(tab) {
     const domain = domainOf(tab.url);
-    return { key: domain, label: domain };
+    return { key: domain, label: domain, domain };
   },
   domainWindow: (tab, context) => GROUPINGS.domain(tab, context),
   tabGroup(tab, { tabGroups, windowOrder }) {
