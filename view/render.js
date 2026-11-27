@@ -4,6 +4,7 @@ import {
   visibleSections,
   visibleTabs,
 } from "./lib/layout.js";
+import { GROUP_COLORS, groupName } from "./lib/grouping.js";
 import { displayPath, displayUrl, domainOf, duplicateKey } from "./lib/url.js";
 
 const FALLBACK_ICON = "../icons/globe.svg";
@@ -15,6 +16,7 @@ export const LABEL_MODES = ["both", "title", "url"];
  * @typedef {object} RenderOptions
  * @property {string} label Which of title, URL, or both to show per tab.
  * @property {boolean} markActive Whether to emphasize each window's active tab.
+ * @property {Map<number, TabGroupInfo> | null} tabGroups Tab groups to mark rows with, if any.
  * @property {Set<string>} expanded IDs of expanded buckets.
  * @property {Map<string, number>} urlCounts
  * @property {(tab: TabInfo) => void} onOpen
@@ -124,7 +126,7 @@ function duplicateBadge(tab, copies, onCloseCopies) {
  */
 function tabRow(
   tab,
-  { label, markActive, urlCounts, onOpen, onClose, onCloseCopies },
+  { label, markActive, tabGroups, urlCounts, onOpen, onClose, onCloseCopies },
   bucket,
 ) {
   const classes = ["tab"];
@@ -135,14 +137,23 @@ function tabRow(
   if (tab.discarded) {
     classes.push("discarded");
   }
+  const group = tabGroups?.get(tab.groupId);
+  const tooltip = [
+    tab.title,
+    tab.url,
+    ...(group ? [`Tab group: ${groupName(group)}`] : []),
+  ];
   const open = el(
     "button",
-    { className: classes.join(" "), title: `${tab.title}\n${tab.url}` },
+    { className: classes.join(" "), title: tooltip.join("\n") },
     favicon(tab),
     tabLabel(tab, label, bucket),
   );
   if (active) {
     open.setAttribute("aria-current", "true");
+  }
+  if (group) {
+    open.append(visuallyHidden(` (tab group ${groupName(group)})`));
   }
   if (tab.discarded) {
     open.append(visuallyHidden(" (unloaded)"));
@@ -158,6 +169,10 @@ function tabRow(
   close.addEventListener("click", () => onClose([tab]));
 
   const li = el("li", {}, focusable(open, `open:${tab.id}`));
+  if (group) {
+    li.className = "grouped";
+    li.style.setProperty("--group-color", GROUP_COLORS[group.color] ?? "");
+  }
   const copies = urlCounts.get(duplicateKey(tab.url)) ?? 0;
   if (copies > 1) {
     li.append(duplicateBadge(tab, copies, onCloseCopies));

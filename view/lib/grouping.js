@@ -14,6 +14,11 @@ export const GROUP_COLORS = {
   red: "#e22850",
 };
 
+/** @param {TabGroupInfo} group */
+export function groupName(group) {
+  return group.title || "Unnamed group";
+}
+
 /** @typedef {Pick<TabData, "windowOrder" | "currentWindowId" | "tabGroups"> & {now?: number}} GroupingContext */
 
 /** @type {Record<string, (tab: TabInfo, context: GroupingContext) => BucketInfo>} */
@@ -44,7 +49,7 @@ export const GROUPINGS = {
     }
     return {
       key: group.id,
-      label: group.title || "Unnamed group",
+      label: groupName(group),
       color: GROUP_COLORS[group.color],
       order: windowOrder.get(group.windowId),
     };
