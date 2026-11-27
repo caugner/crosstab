@@ -3,10 +3,9 @@ import { test } from "node:test";
 
 import {
   countDuplicates,
-  domainFilter,
-  FILTER_DUPLICATES,
   filterTabs,
   otherCopies,
+  toggleDuplicateKeyword,
 } from "../view/lib/filter.js";
 import { countUrls } from "../view/lib/grouping.js";
 import { makeTab } from "./helpers.js";
@@ -22,43 +21,50 @@ test("filterTabs", async (t) => {
   const tabs = [mdn, blog, other, copy];
   const urlCounts = countUrls(tabs);
   const cases = [
-    { name: "no criteria", criteria: {}, expected: tabs },
+    { name: "empty query", query: "", expected: tabs },
     {
       name: "query matches title or URL, ignoring case",
-      criteria: { query: "mdn" },
+      query: "mdn",
       expected: [mdn, blog],
     },
     {
-      name: "domain",
-      criteria: { filter: domainFilter("example.com") },
-      expected: [blog, other, copy],
-    },
-    {
-      name: "duplicates",
-      criteria: { filter: FILTER_DUPLICATES },
+      name: "duplicates keyword, ignoring case",
+      query: "IS:Duplicate",
       expected: [other, copy],
     },
     {
-      name: "query and domain",
-      criteria: { query: "MDN", filter: domainFilter("example.com") },
-      expected: [blog],
+      name: "query matches a domain",
+      query: "example.com",
+      expected: [blog, other, copy],
     },
     {
       name: "query and duplicates",
-      criteria: { query: "copy", filter: FILTER_DUPLICATES },
+      query: "copy is:duplicate",
       expected: [copy],
     },
-    {
-      // A domain cannot collide with the built-in filter values.
-      name: "domain named like the duplicates filter",
-      criteria: { filter: domainFilter(FILTER_DUPLICATES) },
-      expected: [],
-    },
-    { name: "no match", criteria: { query: "nope" }, expected: [] },
+    { name: "no match", query: "nope", expected: [] },
   ];
-  for (const { name, criteria, expected } of cases) {
+  for (const { name, query, expected } of cases) {
     await t.test(name, () => {
-      assert.deepEqual(filterTabs(tabs, criteria, urlCounts), expected);
+      assert.deepEqual(filterTabs(tabs, query, urlCounts), expected);
+    });
+  }
+});
+
+test("toggleDuplicateKeyword", async (t) => {
+  const cases = [
+    { name: "empty", query: "", expected: "is:duplicate" },
+    { name: "adds before text", query: "mdn", expected: "is:duplicate mdn" },
+    { name: "removes", query: "is:duplicate", expected: "" },
+    {
+      name: "removes, keeping text",
+      query: "mdn IS:duplicate",
+      expected: "mdn",
+    },
+  ];
+  for (const { name, query, expected } of cases) {
+    await t.test(name, () => {
+      assert.equal(toggleDuplicateKeyword(query), expected);
     });
   }
 });

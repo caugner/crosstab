@@ -3,7 +3,6 @@ import { test } from "node:test";
 
 import {
   countBy,
-  DOMAIN_OPTIONS_LIMIT,
   domainOptions,
   GROUP_COLORS,
   GROUPINGS,
@@ -409,7 +408,7 @@ test("groupTabs", async (t) => {
   });
 });
 
-test("domainOptions", async (t) => {
+test("domainOptions ranks by tab count, then name", () => {
   const urls = [
     "https://b.test/1",
     "https://b.test/2",
@@ -421,37 +420,10 @@ test("domainOptions", async (t) => {
     "https://single.test",
   ];
   const tabs = urls.map((url) => makeTab({ url }));
-  const ranked = [
+  assert.deepEqual(domainOptions(tabs), [
     ["c.test", 3],
     ["a.test", 2],
     ["b.test", 2],
     ["single.test", 1],
-  ];
-  const cases = [
-    { name: "most tabs first, then by name", expected: ranked },
-    {
-      name: "selected domain already listed",
-      selected: "a.test",
-      expected: ranked,
-    },
-    {
-      name: "selected domain without tabs",
-      selected: "gone.test",
-      expected: [...ranked, ["gone.test", 0]],
-    },
-  ];
-  for (const { name, selected, expected } of cases) {
-    await t.test(name, () => {
-      assert.deepEqual(domainOptions(tabs, selected), expected);
-    });
-  }
-
-  await t.test("limited, but keeps the selected domain", () => {
-    const many = Array.from({ length: DOMAIN_OPTIONS_LIMIT + 5 }, (_, i) =>
-      makeTab({ url: `https://d${String(i).padStart(2, "0")}.test/` }),
-    );
-    const options = domainOptions(many, "d34.test");
-    assert.equal(options.length, DOMAIN_OPTIONS_LIMIT + 1);
-    assert.deepEqual(options.at(-1), ["d34.test", 1]);
-  });
+  ]);
 });

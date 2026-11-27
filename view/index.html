@@ -45,6 +45,7 @@
         <input
           id="search"
           type="search"
+          list="search-suggestions"
           placeholder="Search open tabs"
           aria-label="Search open tabs"
           autofocus
@@ -60,12 +61,7 @@
             <option value="created">Created</option>
           </select>
         </label>
-        <label>
-          Filter
-          <select id="filter">
-            <option value="">All</option>
-          </select>
-        </label>
+        <datalist id="search-suggestions"></datalist>
       </div>
     </header>
     <main id="cards"></main>

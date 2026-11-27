@@ -197,23 +197,14 @@ export function countUrls(tabs) {
   );
 }
 
-export const DOMAIN_OPTIONS_LIMIT = 30;
-
 /**
- * Domains with the most tabs, then by name, plus the selected domain so a
- * filter isn't dropped when its last tabs close.
+ * Domains with the most tabs, then by name.
  *
  * @param {TabInfo[]} tabs
- * @param {string} [selected]
  * @returns {[domain: string, count: number][]}
  */
-export function domainOptions(tabs, selected) {
-  const counts = countBy(tabs, (tab) => domainOf(tab.url));
-  const options = [...counts]
-    .sort(([a, m], [b, n]) => n - m || a.localeCompare(b))
-    .slice(0, DOMAIN_OPTIONS_LIMIT);
-  if (selected !== undefined && !options.some(([d]) => d === selected)) {
-    options.push([selected, counts.get(selected) ?? 0]);
-  }
-  return options;
+export function domainOptions(tabs) {
+  return [...countBy(tabs, (tab) => domainOf(tab.url))].sort(
+    ([a, m], [b, n]) => n - m || a.localeCompare(b),
+  );
 }
