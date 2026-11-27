@@ -103,6 +103,62 @@ export function planMerge(windows, { targetWindowId, viewTabId, asGroups }) {
 }
 
 /**
+ * Steps that move the given tabs into the target window, in order, each part
+ * as a tab group at the end. Pinned tabs and tabs of the other privacy stay.
+ *
+ * @param {LayoutWindow[]} windows All windows, in window-list order.
+ * @param {MirrorPart[]} parts
+ * @param {{targetWindowId: number, viewTabId?: number}} options
+ * @returns {MirrorPlan}
+ */
+export function planMirror(windows, parts, { targetWindowId, viewTabId }) {
+  const target = windows.find((win) => win.id === targetWindowId);
+  if (!target) {
+    return { steps: [], tabCount: 0, groupCount: 0 };
+  }
+  const movable = new Set(
+    windows
+      .filter((win) => win.incognito === target.incognito)
+      .flatMap((win) => win.tabs)
+      .filter((tab) => !tab.pinned && tab.id !== viewTabId)
+      .map((tab) => tab.id),
+  );
+
+  /** @type {MergeStep[]} */
+  const steps = [];
+  let tabCount = 0;
+  let groupCount = 0;
+  for (const part of parts) {
+    const tabIds = part.tabIds.filter((id) => movable.has(id));
+    if (!tabIds.length) {
+      continue;
+    }
+    tabCount += tabIds.length;
+    // Moved to the end first, as grouping keeps tabs where they are.
+    steps.push({ type: "moveTabs", tabIds, index: -1 });
+    if (part.title !== undefined) {
+      steps.push({
+        type: "group",
+        tabIds,
+        title: part.title,
+        color: part.color ?? COLORS[groupCount % COLORS.length],
+      });
+      groupCount++;
+    }
+  }
+  if (!tabCount) {
+    return { steps: [], tabCount, groupCount };
+  }
+
+  const viewTab = target.tabs.find((tab) => tab.id === viewTabId);
+  if (viewTab && !viewTab.pinned) {
+    const index = target.tabs.filter((tab) => tab.pinned).length;
+    steps.unshift({ type: "moveTabs", tabIds: [viewTab.id], index });
+  }
+  return { steps, tabCount, groupCount };
+}
+
+/**
  * The layout of the windows a merge changes, for undoing it.
  *
  * @param {LayoutWindow[]} windows
@@ -163,8 +219,7 @@ export function planRestore(snapshot, live) {
     }
     /** @type {RestoreWindow} */
     const result = {
-      windowId:
-        isTarget(win) && live.windowIds.has(win.id) ? win.id : undefined,
+      windowId: live.windowIds.has(win.id) ? win.id : undefined,
       createData: windowCreateData(win),
       pinnedTabIds: tabs.filter((tab) => tab.pinned).map((tab) => tab.id),
       unpinnedTabIds: tabs.filter((tab) => !tab.pinned).map((tab) => tab.id),

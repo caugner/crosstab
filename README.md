@@ -10,6 +10,7 @@ A Firefox extension that shows all open tabs across windows on one page, so you 
 - **Duplicates** (same URL, ignoring the `#fragment`) get a `×N` badge. `about:` pages are not counted.
 - **Click** a tab to switch to it, or close a single tab or a whole group (with confirmation).
 - **Merge windows** moves all tabs into the Crosstab window, with the Crosstab tab first. **Merge as groups** also puts each window's ungrouped tabs into a `Window N` tab group. Existing tab groups move as they are, and private windows are merged only with each other. **Undo merge** restores the previous windows and groups while the Crosstab tab stays open.
+- **Mirror grouping as tab groups** (in any grouping other than window) turns the shown cards into tab groups in the Crosstab window, in card order, keeping the titles and colors of existing tab groups. Only tabs matching the search move, and pinned tabs stay. It can be undone the same way.
 - Updates live as tabs change, and keeps items in place while the pointer is over them.
 
 Clicking the toolbar button opens Crosstab, or moves it into the current window if it is already open.

@@ -231,6 +231,10 @@ input[type="search"]::-moz-search-clear-button {
   text-align: start;
 }
 
+#reorganise-menu button[hidden] {
+  display: none;
+}
+
 #reorganise-menu button:hover,
 #reorganise-menu button:focus-visible {
   outline: none;

@@ -25,6 +25,8 @@ interface TabData {
   tabs: TabInfo[];
   /** Other windows with the same privacy as the current one, and their tabs. */
   mergeable: { windows: number; tabs: number; groups: number };
+  /** All normal windows, in window-list order. */
+  layout: LayoutWindow[];
   /** Window ID to position in the window list. */
   windowOrder: Map<number, number>;
   currentWindowId: number;
@@ -91,6 +93,22 @@ interface MergePlan {
   /** Tabs moved into the target. */
   tabCount: number;
   /** Tab groups moved or created from the merged windows. */
+  groupCount: number;
+}
+
+/** Tabs to mirror into a tab group, or to keep ungrouped without a title. */
+interface MirrorPart {
+  tabIds: number[];
+  title?: string;
+  /** A `browser.tabGroups.Color`; picked in turn if unset. */
+  color?: string;
+}
+
+interface MirrorPlan {
+  steps: MergeStep[];
+  /** Tabs moved into the target. */
+  tabCount: number;
+  /** Tab groups created. */
   groupCount: number;
 }
 

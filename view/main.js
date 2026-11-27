@@ -14,6 +14,7 @@ import {
   SORTERS,
 } from "./lib/grouping.js";
 import { assignColumns, columnCount, rankTabs } from "./lib/layout.js";
+import { planMirror } from "./lib/merge.js";
 import { preserveFocus } from "./focus.js";
 import { readChoice } from "./lib/settings.js";
 import { el, LABEL_MODES, renderColumns, renderEmpty } from "./render.js";
@@ -23,6 +24,7 @@ import {
   loadTabData,
   onTabDataChanged,
   prepareMerge,
+  prepareMirror,
   runMerge,
   undoMerge,
 } from "./tabs.js";
@@ -43,10 +45,13 @@ const state = {
   expanded: new Set(),
   /** @type {{groupBy: string, columns: string[][], ranks: Map<number, number>} | null} */
   layout: null,
+  /** @type {MirrorPart[]} The shown buckets, for "Mirror grouping". */
+  mirrorParts: [],
   /** @type {TabData} */
   data: {
     tabs: [],
     mergeable: { windows: 0, tabs: 0, groups: 0 },
+    layout: [],
     windowOrder: new Map(),
     currentWindowId: -1,
     tabGroups: new Map(),
@@ -85,6 +90,7 @@ const $reorganiseMenu = byId("reorganise-menu", HTMLElement);
 const $reorganiseItems = [...$reorganiseMenu.querySelectorAll("button")];
 const $merge = byId("merge", HTMLButtonElement);
 const $mergeGroups = byId("merge-groups", HTMLButtonElement);
+const $mirror = byId("mirror", HTMLButtonElement);
 const $undoMerge = byId("undo-merge", HTMLButtonElement);
 
 let latestLoad = 0;
@@ -104,7 +110,6 @@ async function load() {
   }
   state.data = data;
   updateSuggestions();
-  updateMergeButtons();
   render();
 }
 
@@ -145,18 +150,58 @@ function updateSuggestions() {
 }
 
 function updateMergeButtons() {
-  const { windows, tabs, groups } = state.data.mergeable;
-  const disabled = windows === 0;
-  if (!disabled) {
+  const byWindow = state.groupBy === "window";
+  $merge.hidden = !byWindow;
+  $mergeGroups.hidden = !byWindow;
+  $mirror.hidden = byWindow;
+  let disabled;
+  if (byWindow) {
+    const { windows, tabs, groups } = state.data.mergeable;
+    disabled = windows === 0;
     $merge.textContent = `Move ${plural(tabs, "tab")} from ${plural(windows, "window")} into this window`;
     $mergeGroups.textContent = `Move ${plural(windows, "window")} (${plural(tabs, "tab")}) into this window as ${plural(groups, "group")}`;
+  } else {
+    const { tabCount, groupCount } = planMirror(
+      state.data.layout,
+      state.mirrorParts,
+      { targetWindowId: state.data.currentWindowId },
+    );
+    disabled = groupCount === 0;
+    $mirror.textContent = `${mirrorSummary(tabCount, groupCount)} in this window`;
   }
   $reorganise.disabled = disabled;
-  $reorganise.hidden = state.groupBy !== "window";
-  if ($reorganise.disabled || $reorganise.hidden) {
+  if (disabled) {
     $reorganiseMenu.hidePopover();
   }
   $undoMerge.hidden = sessionStorage.getItem(UNDO_KEY) === null;
+}
+
+/**
+ * @param {number} tabs
+ * @param {number} groups
+ */
+function mirrorSummary(tabs, groups) {
+  const grouping = $groupBy.selectedOptions[0].text.toLowerCase();
+  return `Group ${plural(tabs, "tab")} by ${grouping} into ${plural(groups, "tab group")}`;
+}
+
+/**
+ * The buckets as tab groups, keeping existing groups' titles and colors.
+ *
+ * @param {Bucket[]} buckets
+ * @returns {MirrorPart[]}
+ */
+function toMirrorParts(buckets) {
+  return buckets.map((bucket) => {
+    const tabIds = bucket.tabs.map((tab) => tab.id);
+    if (state.groupBy !== "tabGroup") {
+      return { tabIds, title: bucket.label };
+    }
+    const group = state.data.tabGroups.get(Number(bucket.key));
+    return group
+      ? { tabIds, title: group.title ?? "", color: group.color }
+      : { tabIds };
+  });
 }
 
 /**
@@ -175,6 +220,19 @@ async function mergeWindows(asGroups) {
     return;
   }
   // Saved first, so a merge that fails halfway can still be undone.
+  sessionStorage.setItem(UNDO_KEY, JSON.stringify(plan.snapshot));
+  updateMergeButtons();
+  await runMerge(plan);
+}
+
+async function mirrorGrouping() {
+  const plan = await prepareMirror(state.mirrorParts);
+  if (
+    !plan.groupCount ||
+    !confirm(`${mirrorSummary(plan.tabCount, plan.groupCount)} in this window?`)
+  ) {
+    return;
+  }
   sessionStorage.setItem(UNDO_KEY, JSON.stringify(plan.snapshot));
   updateMergeButtons();
   await runMerge(plan);
@@ -258,6 +316,8 @@ function render({ fresh = false } = {}) {
     { groupBy, sortBy, ranks: previous?.ranks },
     data,
   );
+  state.mirrorParts = toMirrorParts(buckets);
+  updateMergeButtons();
   const duplicates = countDuplicates(tabs, data.urlCounts);
   const windows = new Set(tabs.map((tab) => tab.windowId)).size;
   const groups = new Set(
@@ -342,7 +402,6 @@ for (const [$select, key] of /** @type {const} */ ([
   $select.addEventListener("change", () => {
     state[key] = $select.value;
     localStorage.setItem(key, $select.value);
-    updateMergeButtons();
     renderFresh();
   });
 }
@@ -394,7 +453,7 @@ $reorganiseMenu.addEventListener("toggle", (event) => {
   const open = /** @type {ToggleEvent} */ (event).newState === "open";
   $reorganise.setAttribute("aria-expanded", String(open));
   if (open) {
-    $reorganiseItems[0].focus();
+    $reorganiseItems.find(($item) => !$item.hidden)?.focus();
   }
 });
 $reorganiseMenu.addEventListener("keydown", (event) => {
@@ -403,11 +462,9 @@ $reorganiseMenu.addEventListener("keydown", (event) => {
     return;
   }
   event.preventDefault();
-  const count = $reorganiseItems.length;
-  const index = $reorganiseItems.findIndex(
-    ($item) => $item === document.activeElement,
-  );
-  $reorganiseItems[(index + step + count) % count].focus();
+  const items = $reorganiseItems.filter(($item) => !$item.hidden);
+  const index = items.findIndex(($item) => $item === document.activeElement);
+  items[(index + step + items.length) % items.length].focus();
 });
 for (const [$item, asGroups] of /** @type {const} */ ([
   [$merge, false],
@@ -418,6 +475,10 @@ for (const [$item, asGroups] of /** @type {const} */ ([
     mergeWindows(asGroups).catch(reportError);
   });
 }
+$mirror.addEventListener("click", () => {
+  $reorganiseMenu.hidePopover();
+  mirrorGrouping().catch(reportError);
+});
 $undoMerge.addEventListener("click", () => {
   undoLastMerge().catch(reportError);
 });
