@@ -84,11 +84,9 @@ console.log(`Updated ${Object.keys(metadata).join(", ")}`);
 await request(`${addonUrl}/`, "PATCH", await fileForm("icon", ICON));
 console.log(`Uploaded icon ${ICON}`);
 
-const { previews } = await request(`${addonUrl}/`, "GET");
-for (const { id } of previews) {
-  await request(`${addonUrl}/previews/${id}/`, "DELETE");
-}
-console.log(`Deleted ${previews.length} screenshots`);
+// Uploaded before the old ones are deleted, so a throttled or failed run
+// never leaves the listing without screenshots. Rerunning replaces any leftovers.
+const { previews: old } = await request(`${addonUrl}/`, "GET");
 
 for (const [position, { file, caption }] of SCREENSHOTS.entries()) {
   const form = await fileForm("image", file);
@@ -100,3 +98,8 @@ for (const [position, { file, caption }] of SCREENSHOTS.entries()) {
   });
   console.log(`Uploaded screenshot ${file}`);
 }
+
+for (const { id } of old) {
+  await request(`${addonUrl}/previews/${id}/`, "DELETE");
+}
+console.log(`Deleted ${old.length} previous screenshots`);
