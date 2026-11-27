@@ -6,6 +6,7 @@ import {
   domainFilter,
   FILTER_DUPLICATES,
   filterTabs,
+  otherCopies,
 } from "../view/lib/filter.js";
 import { countUrls } from "../view/lib/grouping.js";
 import { makeTab } from "./helpers.js";
@@ -84,4 +85,24 @@ test("countUrls ignores internal about: pages", () => {
   const urlCounts = countUrls(tabs);
   assert.equal(urlCounts.size, 0);
   assert.equal(countDuplicates(tabs, urlCounts), 0);
+});
+
+test("otherCopies", async (t) => {
+  const a = makeTab({ url: "https://a.test/#x" });
+  const b = makeTab({ url: "https://a.test/#y" });
+  const c = makeTab({ url: "https://a.test/" });
+  const query = makeTab({ url: "https://a.test/?q" });
+  const lone = makeTab({ url: "https://b.test/" });
+  const tabs = [a, b, c, query, lone];
+  const cases = [
+    { name: "ignores fragments", tab: a, expected: [b, c] },
+    { name: "excludes the tab itself", tab: c, expected: [a, b] },
+    { name: "query makes a different URL", tab: query, expected: [] },
+    { name: "unique URL", tab: lone, expected: [] },
+  ];
+  for (const { name, tab, expected } of cases) {
+    await t.test(name, () => {
+      assert.deepEqual(otherCopies(tabs, tab), expected);
+    });
+  }
 });

@@ -5,6 +5,7 @@ import {
   FILTER_DUPLICATES,
   filteredDomain,
   filterTabs,
+  otherCopies,
 } from "./lib/filter.js";
 import {
   domainOptions,
@@ -200,6 +201,19 @@ function orReload(action) {
   };
 }
 
+/** @param {TabInfo} tab */
+function closeCopies(tab) {
+  const copies = otherCopies(state.data.tabs, tab);
+  if (
+    copies.length === 0 ||
+    (copies.length > 1 &&
+      !confirm(`Close ${copies.length} other tabs with this URL?`))
+  ) {
+    return;
+  }
+  orReload(closeTabs)(copies);
+}
+
 /** @param {string} bucketId */
 function toggleExpanded(bucketId) {
   if (!state.expanded.delete(bucketId)) {
@@ -267,6 +281,7 @@ function render({ fresh = false } = {}) {
         urlCounts: data.urlCounts,
         onOpen: orReload(focusTab),
         onClose: orReload(closeTabs),
+        onCloseCopies: closeCopies,
         onToggle: toggleExpanded,
       },
     ),

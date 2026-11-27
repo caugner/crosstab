@@ -7,7 +7,7 @@
   --hover: light-dark(#f0f0f4, #42414d);
   --border: light-dark(#cfcfd8, #5b5b66);
   --accent: light-dark(#7542e5, #ab71ff);
-  --dup: light-dark(#c45a00, #d9720b);
+  --dup: light-dark(#a44b00, #f0933a);
   --card-border-gradient: linear-gradient(
     to right,
     light-dark(#b494ff, #9d7bf0),
@@ -264,14 +264,37 @@ button {
 }
 
 .dup {
+  display: flex;
   flex: none;
-  margin-inline-start: auto;
+  gap: 0.2rem;
+  align-items: center;
+  margin-inline: 0.2rem;
   padding: 0 0.4rem;
+  border: 1px solid color-mix(in srgb, var(--dup) 35%, transparent);
   border-radius: 0.6rem;
-  background: var(--dup);
-  color: #fff;
+  background: color-mix(in srgb, var(--dup) 12%, transparent);
+  color: var(--dup);
   font-size: 0.75rem;
   font-weight: 600;
+}
+
+.dup::before {
+  width: 0.8em;
+  height: 0.8em;
+  background: currentColor;
+  content: "";
+  mask-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="black" stroke-width="1.5"><rect x="5.5" y="5.5" width="9" height="9" rx="2"/><path d="M10.5 3.5v-.5a1.5 1.5 0 0 0-1.5-1.5H3A1.5 1.5 0 0 0 1.5 3v6A1.5 1.5 0 0 0 3 10.5h.5"/></svg>');
+  mask-size: contain;
+  mask-repeat: no-repeat;
+}
+
+.dup:hover {
+  background: color-mix(in srgb, var(--dup) 22%, transparent);
+}
+
+.dup:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
 }
 
 .tab.active .title {
