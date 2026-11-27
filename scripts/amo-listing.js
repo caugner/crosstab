@@ -16,6 +16,9 @@ if (!issuer || !secret) {
 /** Longest `Retry-After` to wait out; AMO has asked for up to a day. */
 const MAX_WAIT = 60 * 60;
 
+/** Identifies this client to AMO, instead of the default `node`. */
+const USER_AGENT = "crosstab-listing (+https://github.com/caugner/crosstab)";
+
 const manifest = JSON.parse(await readFile("manifest.json", "utf8"));
 const addonUrl = `${API}/${manifest.browser_specific_settings.gecko.id}`;
 
@@ -50,6 +53,7 @@ async function request(url, method, body) {
     method,
     headers: {
       Authorization: authorization(),
+      "User-Agent": USER_AGENT,
       ...(json ? { "Content-Type": "application/json" } : {}),
     },
     body: json ? JSON.stringify(body) : body,
