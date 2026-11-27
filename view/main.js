@@ -10,6 +10,7 @@ import {
   domainOptions,
   GROUPINGS,
   groupTabs,
+  PER_WINDOW_GROUPINGS,
   SORTERS,
 } from "./lib/grouping.js";
 import { assignColumns, columnCount, rankTabs } from "./lib/layout.js";
@@ -261,6 +262,7 @@ function render({ fresh = false } = {}) {
       ),
       {
         label: state.label,
+        markActive: PER_WINDOW_GROUPINGS.has(groupBy),
         expanded,
         urlCounts: data.urlCounts,
         onOpen: orReload(focusTab),
