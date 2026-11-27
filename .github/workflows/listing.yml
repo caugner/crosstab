@@ -6,7 +6,6 @@ on:
     paths:
       - listing/**
       - amo-metadata.json
-      - scripts/amo-listing.js
   workflow_dispatch:
 
 permissions:
