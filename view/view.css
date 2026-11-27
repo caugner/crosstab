@@ -120,11 +120,6 @@ select {
   field-sizing: content;
 }
 
-#filter {
-  max-width: 14rem;
-  text-overflow: ellipsis;
-}
-
 select:hover {
   background-color: var(--field-hover);
 }

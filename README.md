@@ -6,7 +6,7 @@ A Firefox extension that shows all open tabs across windows on one page, so you 
 
 - **Group by** window, domain, domain + window, tab group, last accessed, or created (Today, Yesterday, Last 7 days, Last 30 days, Older).
 - **Sort by** recent activity, tab order, title, or URL, and **display** the title, URL, or both.
-- **Search** by title or URL, and **filter** to duplicates or a single domain.
+- **Search** by title or URL, with open domains suggested as you type. `is:duplicate` shows only duplicates.
 - **Duplicates** (same URL, ignoring the `#fragment`) get a `×N` badge. `about:` pages are not counted.
 - **Click** a tab to switch to it, or close a single tab or a whole group (with confirmation).
 - **Merge windows** moves all tabs into the Crosstab window, with the Crosstab tab first. **Merge as groups** also puts each window's ungrouped tabs into a `Window N` tab group. Existing tab groups move as they are, and private windows are merged only with each other. **Undo merge** restores the previous windows and groups while the Crosstab tab stays open.
@@ -18,7 +18,7 @@ Clicking the toolbar button opens Crosstab, or moves it into the current window 
 
 - Firefox has no tab creation timestamp, so Crosstab records one when a tab opens. Tabs opened before installing it show as "Unknown" under "Created".
 - Tabs in private windows are listed (if the extension is allowed there) and their window is marked "(Private)".
-- Group by, Sort by, and Display are remembered. Search and Filter reset when the page reloads.
+- Group by, Sort by, and Display are remembered. Search resets when the page reloads.
 - Crosstab collects no data. It needs the `tabs`, `tabGroups`, and `sessions` permissions.
 
 ## Development

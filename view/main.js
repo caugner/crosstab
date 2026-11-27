@@ -1,11 +1,10 @@
 import {
   countDuplicates,
-  domainFilter,
-  FILTER_ALL,
-  FILTER_DUPLICATES,
-  filteredDomain,
+  DUPLICATE_KEYWORD,
   filterTabs,
   otherCopies,
+  parseQuery,
+  toggleDuplicateKeyword,
 } from "./lib/filter.js";
 import {
   domainOptions,
@@ -40,7 +39,6 @@ const state = {
   sortBy: readChoice(localStorage, "sortBy", Object.keys(SORTERS)),
   label: readChoice(localStorage, "label", LABEL_MODES),
   query: "",
-  filter: FILTER_ALL,
   /** @type {Set<string>} IDs of expanded buckets. */
   expanded: new Set(),
   /** @type {{groupBy: string, columns: string[][], ranks: Map<number, number>} | null} */
@@ -77,7 +75,7 @@ const $duplicates = byId("duplicates", HTMLButtonElement);
 const $search = byId("search", HTMLInputElement);
 const $groupBy = byId("group-by", HTMLSelectElement);
 const $sortBy = byId("sort-by", HTMLSelectElement);
-const $filter = byId("filter", HTMLSelectElement);
+const $suggestions = byId("search-suggestions", HTMLDataListElement);
 const $label = byId("label", HTMLSelectElement);
 const $customize = byId("customize", HTMLButtonElement);
 const $customizePanel = byId("customize-panel", HTMLElement);
@@ -104,7 +102,7 @@ async function load() {
     return;
   }
   state.data = data;
-  updateFilter();
+  updateSuggestions();
   updateMergeButtons();
   render();
 }
@@ -125,30 +123,24 @@ function scheduleLoad() {
   }, RELOAD_DELAY);
 }
 
-function updateFilter() {
+function updateSuggestions() {
   const { tabs, urlCounts } = state.data;
+  const suggestions = domainOptions(tabs);
   const duplicates = countDuplicates(tabs, urlCounts);
-  const domains = domainOptions(tabs, filteredDomain(state.filter));
-
-  // Skip the rebuild when unchanged, as it would close an open dropdown.
-  const signature = JSON.stringify([duplicates, domains]);
-  if ($filter.dataset.signature !== signature) {
-    $filter.dataset.signature = signature;
-    const domainGroup = el(
-      "optgroup",
-      { label: "Domain" },
-      ...domains.map(
-        ([domain, count]) =>
-          new Option(`${domain} (${count})`, domainFilter(domain)),
+  if (duplicates) {
+    suggestions.unshift([DUPLICATE_KEYWORD, duplicates]);
+  }
+  // Skip the rebuild when unchanged, as it would close open suggestions.
+  const signature = JSON.stringify(suggestions);
+  if ($suggestions.dataset.signature !== signature) {
+    $suggestions.dataset.signature = signature;
+    // Firefox shows only the label, so it must include the value.
+    $suggestions.replaceChildren(
+      ...suggestions.map(([value, count]) =>
+        el("option", { value, label: `${value} (${count})` }),
       ),
     );
-    $filter.replaceChildren(
-      new Option("All", FILTER_ALL),
-      new Option(`Duplicates (${duplicates})`, FILTER_DUPLICATES),
-      ...(domains.length ? [domainGroup] : []),
-    );
   }
-  $filter.value = state.filter;
 }
 
 function updateMergeButtons() {
@@ -259,14 +251,13 @@ function render({ fresh = false } = {}) {
       ? state.layout
       : null;
 
-  const tabs = filterTabs(data.tabs, state, data.urlCounts);
+  const tabs = filterTabs(data.tabs, state.query, data.urlCounts);
   const buckets = groupTabs(
     tabs,
     { groupBy, sortBy, ranks: previous?.ranks },
     data,
   );
   const duplicates = countDuplicates(tabs, data.urlCounts);
-  const duplicatesActive = state.filter === FILTER_DUPLICATES;
   const windows = new Set(tabs.map((tab) => tab.windowId)).size;
   const groups = new Set(
     tabs.map((tab) => tab.groupId).filter((id) => data.tabGroups.has(id)),
@@ -277,8 +268,9 @@ function render({ fresh = false } = {}) {
   $duplicatesSep.hidden = !duplicates;
   $duplicates.hidden = !duplicates;
   $duplicates.textContent = plural(duplicates, "duplicate");
-  $duplicates.setAttribute("aria-pressed", String(duplicatesActive));
-  $duplicates.title = duplicatesActive
+  const { duplicatesOnly } = parseQuery(state.query);
+  $duplicates.setAttribute("aria-pressed", String(duplicatesOnly));
+  $duplicates.title = duplicatesOnly
     ? "Show all tabs"
     : "Show only duplicate tabs";
 
@@ -327,14 +319,9 @@ $search.addEventListener("input", () => {
   state.query = $search.value.trim();
   renderFresh();
 });
-$filter.addEventListener("change", () => {
-  state.filter = $filter.value;
-  renderFresh();
-});
 $duplicates.addEventListener("click", () => {
-  state.filter =
-    state.filter === FILTER_DUPLICATES ? FILTER_ALL : FILTER_DUPLICATES;
-  $filter.value = state.filter;
+  $search.value = toggleDuplicateKeyword($search.value);
+  state.query = $search.value.trim();
   renderFresh();
 });
 for (const [$select, key] of /** @type {const} */ ([

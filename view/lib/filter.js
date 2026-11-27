@@ -1,23 +1,4 @@
-import { domainOf, duplicateKey } from "./url.js";
-
-export const FILTER_ALL = "";
-export const FILTER_DUPLICATES = "duplicates";
-const DOMAIN_PREFIX = "domain:";
-
-/** @param {string} domain */
-export function domainFilter(domain) {
-  return DOMAIN_PREFIX + domain;
-}
-
-/**
- * @param {string} filter
- * @returns {string | undefined} The domain of a `domainFilter()`.
- */
-export function filteredDomain(filter) {
-  return filter.startsWith(DOMAIN_PREFIX)
-    ? filter.slice(DOMAIN_PREFIX.length)
-    : undefined;
-}
+import { duplicateKey } from "./url.js";
 
 /**
  * @param {TabInfo} tab
@@ -47,33 +28,40 @@ export function countDuplicates(tabs, urlCounts) {
   return tabs.filter((tab) => isDuplicate(tab, urlCounts)).length;
 }
 
+export const DUPLICATE_KEYWORD = "is:duplicate";
+
 /**
- * @param {TabInfo} tab
- * @param {string} filter One of the `FILTER_*` values or a `domainFilter()`.
- * @param {Map<string, number>} urlCounts
+ * Splits the `is:duplicate` keyword off a search query.
+ *
+ * @param {string} query
  */
-function matchesFilter(tab, filter, urlCounts) {
-  if (filter === FILTER_DUPLICATES) {
-    return isDuplicate(tab, urlCounts);
-  }
-  const domain = filteredDomain(filter);
-  return domain === undefined || domainOf(tab.url) === domain;
+export function parseQuery(query) {
+  const words = query.trim().split(/\s+/).filter(Boolean);
+  const rest = words.filter((word) => word.toLowerCase() !== DUPLICATE_KEYWORD);
+  return { text: rest.join(" "), duplicatesOnly: rest.length < words.length };
+}
+
+/**
+ * Adds or removes the `is:duplicate` keyword, keeping the rest of the query.
+ *
+ * @param {string} query
+ */
+export function toggleDuplicateKeyword(query) {
+  const { text, duplicatesOnly } = parseQuery(query);
+  return duplicatesOnly ? text : `${DUPLICATE_KEYWORD} ${text}`.trim();
 }
 
 /**
  * @param {TabInfo[]} tabs
- * @param {{query?: string, filter?: string}} criteria
+ * @param {string} query Search text, optionally with `is:duplicate`.
  * @param {Map<string, number>} urlCounts
  */
-export function filterTabs(
-  tabs,
-  { query = "", filter = FILTER_ALL },
-  urlCounts,
-) {
-  const needle = query.toLowerCase();
+export function filterTabs(tabs, query, urlCounts) {
+  const { text, duplicatesOnly } = parseQuery(query);
+  const needle = text.toLowerCase();
   return tabs.filter(
     (tab) =>
-      matchesFilter(tab, filter, urlCounts) &&
+      (!duplicatesOnly || isDuplicate(tab, urlCounts)) &&
       (!needle ||
         tab.title.toLowerCase().includes(needle) ||
         tab.url.toLowerCase().includes(needle)),
