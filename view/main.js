@@ -255,7 +255,8 @@ function render({ fresh = false } = {}) {
   );
   const duplicates = countDuplicates(tabs, data.urlCounts);
   const duplicatesActive = state.filter === FILTER_DUPLICATES;
-  $tabCount.textContent = plural(tabs.length, "tab");
+  const windows = new Set(tabs.map((tab) => tab.windowId)).size;
+  $tabCount.textContent = `${plural(tabs.length, "tab")} on ${plural(windows, "window")}`;
   $duplicatesSep.hidden = !duplicates;
   $duplicates.hidden = !duplicates;
   $duplicates.textContent = plural(duplicates, "duplicate");
