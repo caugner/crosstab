@@ -399,14 +399,58 @@ button {
   inset: auto 1.5rem 1.5rem auto;
   z-index: 5;
   display: flex;
-  gap: 0.5rem;
   align-items: center;
-  min-height: 2rem;
-  padding: 0.25rem 1rem;
+  justify-content: flex-end;
+  box-sizing: border-box;
+  height: 2rem;
+  padding: 0 0.5rem;
+  overflow: hidden;
   border-radius: 24px;
   background: light-dark(#764edd, #b89cff);
   color: light-dark(#fff, #252428);
   font-weight: 600;
+}
+
+/* Collapsed to the icon until hovered or focused, like about:newtab. The 0fr to
+   1fr track animates the label's real width, so hiding mirrors showing. */
+.customize-label {
+  display: grid;
+  grid-template-columns: 0fr;
+  margin-inline-end: 0;
+  opacity: 0;
+  white-space: nowrap;
+}
+
+.customize-label > span {
+  min-width: 0;
+  overflow: hidden;
+}
+
+#customize:hover,
+#customize:focus-visible {
+  padding-inline: 1rem;
+}
+
+#customize:hover .customize-label,
+#customize:focus-visible .customize-label {
+  grid-template-columns: 1fr;
+  margin-inline-end: 0.5rem;
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  #customize {
+    transition:
+      padding 0.3s ease,
+      background-color 0.15s;
+  }
+
+  .customize-label {
+    transition:
+      grid-template-columns 0.3s ease,
+      margin 0.3s ease,
+      opacity 0.3s ease;
+  }
 }
 
 #customize:hover {
