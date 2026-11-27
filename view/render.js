@@ -65,8 +65,8 @@ function tabLabel(tab, mode, bucket) {
     return el(
       "span",
       { className: "label" },
-      el("span", { className: "url", textContent: url }),
       title,
+      el("span", { className: "url", textContent: url }),
     );
   }
   if (bucket.mixed) {
