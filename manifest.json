@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Crosstab",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "All open tabs from every window on one page: find the one you need, close forgotten tabs and duplicates, and reorganise tabs across windows.",
   "icons": {
     "48": "icons/icon.svg",
