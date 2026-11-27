@@ -369,6 +369,27 @@ input[type="search"]::-moz-search-clear-button {
   border-radius: 0.4rem;
 }
 
+.card li.grouped {
+  position: relative;
+}
+
+.card li.grouped::before {
+  position: absolute;
+  inset-block: 0.35rem;
+  /* In the card padding, clear of the favicon and the row's hover background. */
+  inset-inline-start: -0.4rem;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--group-color, var(--muted));
+  content: "";
+}
+
+@media (forced-colors: active) {
+  .card li.grouped::before {
+    background: CanvasText;
+  }
+}
+
 .card li:hover,
 .card li:focus-within {
   background: var(--hover);

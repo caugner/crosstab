@@ -366,6 +366,8 @@ function render({ fresh = false } = {}) {
       {
         label: state.label,
         markActive: PER_WINDOW_GROUPINGS.has(groupBy),
+        // The card already names the group.
+        tabGroups: groupBy === "tabGroup" ? null : data.tabGroups,
         expanded,
         urlCounts: data.urlCounts,
         onOpen: orReload(focusTab),
