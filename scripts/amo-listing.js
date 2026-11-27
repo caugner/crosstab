@@ -1,11 +1,14 @@
-// Updates the AMO listing: metadata from `amo-metadata.json`, icon, and
-// screenshots (replacing existing ones). Needs `AMO_JWT_ISSUER` and
+// Updates the AMO listing to match the metadata from `amo-metadata.json`, the
+// icon, and the screenshots, skipping what is already up to date. Pass
+// `--dry-run` to only print the changes. Needs `AMO_JWT_ISSUER` and
 // `AMO_JWT_SECRET`, the same API credentials as `npm run sign`.
 import { createHmac, randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
+import { isDeepStrictEqual } from "node:util";
 
 import { ICON, SCREENSHOTS } from "../listing/listing.js";
+import { pixelDigest } from "./png.js";
 
 const API = "https://addons.mozilla.org/api/v5/addons/addon";
 const { AMO_JWT_ISSUER: issuer, AMO_JWT_SECRET: secret } = process.env;
@@ -15,6 +18,15 @@ if (!issuer || !secret) {
 
 /** Longest `Retry-After` to wait out; AMO has asked for up to a day. */
 const MAX_WAIT = 60 * 60;
+
+/**
+ * Spacing between writes. Every `POST`, `PATCH` and `DELETE` on an add-on,
+ * including throttled ones, counts against limits of 3/minute, 10/hour and
+ * 24/day per user, shared with `npm run sign`.
+ */
+const WRITE_INTERVAL = 21 * 1000;
+
+const dryRun = process.argv.includes("--dry-run");
 
 /** Identifies this client to AMO, instead of the default `node`. */
 const USER_AGENT = "crosstab-listing (+https://github.com/caugner/crosstab)";
@@ -42,12 +54,18 @@ function authorization() {
   return `JWT ${unsigned}.${signature}`;
 }
 
+let nextWrite = 0;
+
 /**
  * @param {string} url
  * @param {string} method
  * @param {FormData | object} [body]
  */
 async function request(url, method, body) {
+  if (method !== "GET") {
+    await sleep(nextWrite - Date.now());
+    nextWrite = Date.now() + WRITE_INTERVAL;
+  }
   const json = body !== undefined && !(body instanceof FormData);
   const response = await fetch(url, {
     method,
@@ -67,13 +85,18 @@ async function request(url, method, body) {
       );
     }
     console.log(`Throttled, retrying in ${seconds}s`);
-    await new Promise((resolve) => setTimeout(resolve, seconds * 1000));
+    await sleep(seconds * 1000);
     return request(url, method, body);
   }
   if (!response.ok) {
     throw new Error(`${method} ${url}: ${response.status} ${text}`);
   }
   return text ? JSON.parse(text) : undefined;
+}
+
+/** @param {number} ms */
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, Math.max(ms, 0)));
 }
 
 /**
@@ -87,31 +110,145 @@ async function fileForm(field, path) {
   return form;
 }
 
+/**
+ * The pixel digest of an image on AMO, or `undefined` if it can't be compared.
+ *
+ * @param {string | undefined} url
+ */
+async function remoteDigest(url) {
+  if (!url) return undefined;
+  try {
+    const response = await fetch(url, {
+      headers: { "User-Agent": USER_AGENT },
+    });
+    if (!response.ok) return undefined;
+    return pixelDigest(Buffer.from(await response.arrayBuffer()));
+  } catch {
+    return undefined;
+  }
+}
+
+/** @param {string} path */
+async function localDigest(path) {
+  return pixelDigest(await readFile(path));
+}
+
+/**
+ * Whether AMO already has `value`. Translated fields only need the given
+ * locales to match, as AMO keeps the others.
+ *
+ * @param {unknown} value
+ * @param {any} current
+ */
+function isUpToDate(value, current) {
+  // `homepage` and `support_url` also return `outgoing` redirect URLs.
+  const actual = current?.url ?? current;
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return Object.entries(value).every(([locale, text]) =>
+      isDeepStrictEqual(actual?.[locale], text),
+    );
+  }
+  return isDeepStrictEqual(actual, value);
+}
+
+/** @type {{ description: string, writes: number, run: () => Promise<void> }[]} */
+const changes = [];
+
+const addon = await request(`${addonUrl}/`, "GET");
+
 // Version fields only apply to new versions, see `npm run sign`.
 const metadata = JSON.parse(await readFile("amo-metadata.json", "utf8"));
 delete metadata.version;
-await request(`${addonUrl}/`, "PATCH", metadata);
-console.log(`Updated ${Object.keys(metadata).join(", ")}`);
+const outdated = Object.fromEntries(
+  Object.entries(metadata).filter(
+    ([key, value]) => !isUpToDate(value, addon[key]),
+  ),
+);
+if (Object.keys(outdated).length) {
+  changes.push({
+    description: `Update ${Object.keys(outdated).join(", ")}`,
+    writes: 1,
+    run: () => request(`${addonUrl}/`, "PATCH", outdated),
+  });
+}
 
-await request(`${addonUrl}/`, "PATCH", await fileForm("icon", ICON));
-console.log(`Uploaded icon ${ICON}`);
+if ((await remoteDigest(addon.icons?.["128"])) !== (await localDigest(ICON))) {
+  changes.push({
+    description: `Upload icon ${ICON}`,
+    writes: 1,
+    run: async () => {
+      await request(`${addonUrl}/`, "PATCH", await fileForm("icon", ICON));
+    },
+  });
+}
 
-// Uploaded before the old ones are deleted, so a throttled or failed run
-// never leaves the listing without screenshots. Rerunning replaces any leftovers.
-const { previews: old } = await request(`${addonUrl}/`, "GET");
+/** @type {{ id: number, caption: Record<string, string> | null, position: number, image_url: string }[]} */
+const previews = addon.previews;
+const unmatched = new Map(
+  await Promise.all(
+    previews.map(
+      async (preview) =>
+        /** @type {const} */ ([preview, await remoteDigest(preview.image_url)]),
+    ),
+  ),
+);
 
 for (const [position, { file, caption }] of SCREENSHOTS.entries()) {
-  const form = await fileForm("image", file);
-  form.set("position", String(position));
-  const { id } = await request(`${addonUrl}/previews/`, "POST", form);
-  // AMO rejects a caption in the same request as the image.
-  await request(`${addonUrl}/previews/${id}/`, "PATCH", {
-    caption: { "en-US": caption },
+  const captions = { "en-US": caption };
+  const digest = await localDigest(file);
+  const match = [...unmatched].find(([, remote]) => remote === digest)?.[0];
+  if (match) {
+    unmatched.delete(match);
+    const update = {
+      ...(isUpToDate(captions, match.caption) ? {} : { caption: captions }),
+      ...(match.position === position ? {} : { position }),
+    };
+    if (Object.keys(update).length) {
+      changes.push({
+        description: `Update ${Object.keys(update).join(", ")} of ${file}`,
+        writes: 1,
+        run: () =>
+          request(`${addonUrl}/previews/${match.id}/`, "PATCH", update),
+      });
+    }
+    continue;
+  }
+  changes.push({
+    description: `Upload screenshot ${file}`,
+    writes: 2,
+    run: async () => {
+      const form = await fileForm("image", file);
+      form.set("position", String(position));
+      const { id } = await request(`${addonUrl}/previews/`, "POST", form);
+      // AMO rejects a caption in the same request as the image.
+      await request(`${addonUrl}/previews/${id}/`, "PATCH", {
+        caption: captions,
+      });
+    },
   });
-  console.log(`Uploaded screenshot ${file}`);
 }
 
-for (const { id } of old) {
-  await request(`${addonUrl}/previews/${id}/`, "DELETE");
+// Deleted after the uploads, so a throttled or failed run never leaves the
+// listing without screenshots. Rerunning removes any leftovers.
+for (const [{ id, image_url }] of unmatched) {
+  changes.push({
+    description: `Delete screenshot ${image_url}`,
+    writes: 1,
+    run: () => request(`${addonUrl}/previews/${id}/`, "DELETE"),
+  });
 }
-console.log(`Deleted ${old.length} previous screenshots`);
+
+const writes = changes.reduce((sum, change) => sum + change.writes, 0);
+if (!changes.length) {
+  console.log("Listing is up to date");
+} else {
+  console.log(`${writes} write requests needed (AMO allows 10/hour):`);
+}
+for (const change of changes) {
+  if (dryRun) {
+    console.log(`- ${change.description}`);
+  } else {
+    await change.run();
+    console.log(`${change.description}: done`);
+  }
+}
