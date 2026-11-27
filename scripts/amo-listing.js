@@ -13,6 +13,9 @@ if (!issuer || !secret) {
   throw new Error("Set AMO_JWT_ISSUER and AMO_JWT_SECRET");
 }
 
+/** Longest `Retry-After` to wait out; AMO has asked for up to a day. */
+const MAX_WAIT = 60 * 60;
+
 const manifest = JSON.parse(await readFile("manifest.json", "utf8"));
 const addonUrl = `${API}/${manifest.browser_specific_settings.gecko.id}`;
 
@@ -54,6 +57,11 @@ async function request(url, method, body) {
   const text = await response.text();
   if (response.status === 429) {
     const seconds = Number(response.headers.get("Retry-After")) || 60;
+    if (seconds > MAX_WAIT) {
+      throw new Error(
+        `Throttled for ${seconds}s, rerun later: ${method} ${url}`,
+      );
+    }
     console.log(`Throttled, retrying in ${seconds}s`);
     await new Promise((resolve) => setTimeout(resolve, seconds * 1000));
     return request(url, method, body);
