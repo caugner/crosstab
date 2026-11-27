@@ -48,6 +48,12 @@ body {
   margin-bottom: 1rem;
 }
 
+.brand {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
 h1 {
   display: flex;
   gap: 0.5rem;
@@ -62,10 +68,8 @@ h1 img {
 }
 
 #count {
-  margin-inline-start: 0.5rem;
   color: var(--muted);
   font-size: 1rem;
-  font-weight: normal;
 }
 
 #count button {
@@ -138,6 +142,7 @@ select:focus-visible {
 
 input[type="search"] {
   box-sizing: border-box;
+  border-color: var(--muted);
   width: 16rem;
   padding-inline: 2.25rem;
   background: var(--card) var(--magnifier) no-repeat left 0.75rem center / 1rem;
@@ -237,8 +242,12 @@ input[type="search"]::-moz-search-clear-button {
 
 #reorganise-menu button:hover,
 #reorganise-menu button:focus-visible {
-  outline: none;
   background: var(--hover);
+}
+
+#reorganise-menu button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 #cards {
@@ -270,11 +279,19 @@ input[type="search"]::-moz-search-clear-button {
   --card-border: var(--card-border-gradient);
 }
 
-.card h2 {
+.card-header {
   display: flex;
   gap: 0.5rem;
   align-items: center;
   margin: 0.25rem 0 0.5rem 0.5rem;
+}
+
+.card h2 {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  min-width: 0;
+  margin: 0;
   font-size: 1.05rem;
 }
 
@@ -310,25 +327,25 @@ input[type="search"]::-moz-search-clear-button {
   content: "";
 }
 
-.card h2 .close-all {
+.card .close-all {
   flex: none;
+  min-height: 24px;
   margin-inline-start: auto;
   padding: 0.2rem 0.6rem;
   border-radius: 999px;
   font-size: 0.75rem;
-  font-weight: normal;
   opacity: 0;
   transition: opacity 0.15s;
 }
 
 .card:hover .close-all,
 .card:focus-within .close-all,
-.card h2 .close-all:focus-visible {
+.card .close-all:focus-visible {
   opacity: 1;
 }
 
 @media (hover: none) {
-  .card h2 .close-all {
+  .card .close-all {
     opacity: 1;
   }
 }
@@ -404,6 +421,7 @@ button {
   flex: none;
   gap: 0.2rem;
   align-items: center;
+  min-height: 24px;
   margin-inline: 0.2rem;
   padding: 0 0.4rem;
   border: 1px solid color-mix(in srgb, var(--dup) 35%, transparent);
@@ -607,4 +625,13 @@ button {
   align-items: center;
   justify-content: space-between;
   color: var(--muted);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }

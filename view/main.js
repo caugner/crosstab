@@ -33,6 +33,9 @@ const COLUMN_MIN_WIDTH = 300;
 const RELOAD_DELAY = 100;
 /** Reload at least this often during a steady stream of tab events. */
 const RELOAD_MAX_WAIT = 1000;
+/** Search results are announced once typing pauses, then cleared. */
+const STATUS_DELAY = 500;
+const STATUS_DURATION = 5000;
 /** `sessionStorage` key of the layout before the last merge. */
 const UNDO_KEY = "mergeUndo";
 
@@ -77,6 +80,7 @@ const $cards = byId("cards", HTMLElement);
 const $tabCount = byId("tab-count", HTMLElement);
 const $duplicatesSep = byId("duplicates-sep", HTMLElement);
 const $duplicates = byId("duplicates", HTMLButtonElement);
+const $searchStatus = byId("search-status", HTMLElement);
 const $search = byId("search", HTMLInputElement);
 const $searchClear = byId("search-clear", HTMLButtonElement);
 const $groupBy = byId("group-by", HTMLSelectElement);
@@ -293,9 +297,14 @@ function showCards(nodes) {
   preserveFocus($cards, () => $cards.replaceChildren(...nodes));
 }
 
+/** Whether keyboard focus is in the cards; clicks focus buttons on some OSes. */
+function cardsFocused() {
+  return $cards.querySelector(":focus-visible") !== null;
+}
+
 /**
- * While the pointer is over the cards, cards keep their column and rows
- * their order, so a click target never moves under the pointer.
+ * While the pointer or keyboard focus is in the cards, cards keep their column
+ * and rows their order, so a target never moves under the pointer or caret.
  */
 function render({ fresh = false } = {}) {
   const { data, groupBy, sortBy, expanded } = state;
@@ -304,7 +313,7 @@ function render({ fresh = false } = {}) {
   const count = columnCount($cards.clientWidth, COLUMN_MIN_WIDTH, gap);
   const previous =
     !fresh &&
-    $cards.matches(":hover") &&
+    ($cards.matches(":hover") || cardsFocused()) &&
     state.layout?.groupBy === groupBy &&
     state.layout.columns.length === count
       ? state.layout
@@ -385,6 +394,20 @@ function searchChanged() {
   state.query = $search.value.trim();
   $searchClear.hidden = !$search.value;
   renderFresh();
+  announceResults();
+}
+
+let statusTimer = 0;
+/** Unlike #count, announced only when the user changes the search. */
+function announceResults() {
+  clearTimeout(statusTimer);
+  $searchStatus.textContent = "";
+  statusTimer = setTimeout(() => {
+    $searchStatus.textContent = $tabCount.textContent;
+    statusTimer = setTimeout(() => {
+      $searchStatus.textContent = "";
+    }, STATUS_DURATION);
+  }, STATUS_DELAY);
 }
 $search.addEventListener("input", searchChanged);
 $searchClear.addEventListener("click", () => {
@@ -457,14 +480,25 @@ $reorganiseMenu.addEventListener("toggle", (event) => {
   }
 });
 $reorganiseMenu.addEventListener("keydown", (event) => {
-  const step = { ArrowDown: 1, ArrowUp: -1 }[event.key];
-  if (!step) {
+  if (event.key === "Tab") {
+    // Tab continues from the button, even if a click opened the menu.
+    $reorganise.focus();
+    $reorganiseMenu.hidePopover();
+    return;
+  }
+  const items = $reorganiseItems.filter(($item) => !$item.hidden);
+  const index = items.findIndex(($item) => $item === document.activeElement);
+  const next = {
+    ArrowDown: (index + 1) % items.length,
+    ArrowUp: (index - 1 + items.length) % items.length,
+    Home: 0,
+    End: items.length - 1,
+  }[event.key];
+  if (next === undefined) {
     return;
   }
   event.preventDefault();
-  const items = $reorganiseItems.filter(($item) => !$item.hidden);
-  const index = items.findIndex(($item) => $item === document.activeElement);
-  items[(index + step + items.length) % items.length].focus();
+  items[next].focus();
 });
 for (const [$item, asGroups] of /** @type {const} */ ([
   [$merge, false],
@@ -493,6 +527,19 @@ document.addEventListener("visibilitychange", () => {
 });
 window.addEventListener("focus", scheduleLoad);
 window.addEventListener("resize", renderFresh);
-$cards.addEventListener("mouseleave", renderFresh);
+$cards.addEventListener("mouseleave", () => {
+  if (!cardsFocused()) {
+    renderFresh();
+  }
+});
+$cards.addEventListener("focusout", () => {
+  // Deferred, as re-rendering briefly drops focus before restoring it.
+  setTimeout(() => {
+    // Not while away, e.g. after activating a tab, to keep rows on return.
+    if (document.hasFocus() && !$cards.matches(":hover") && !cardsFocused()) {
+      renderFresh();
+    }
+  });
+});
 
 load();

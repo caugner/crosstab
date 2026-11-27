@@ -80,6 +80,11 @@ function tabLabel(tab, mode, bucket) {
   return title;
 }
 
+/** @param {string} text */
+function visuallyHidden(text) {
+  return el("span", { className: "visually-hidden", textContent: text });
+}
+
 /** @param {TabInfo} tab */
 function favicon(tab) {
   const icon = el("img", {
@@ -123,7 +128,8 @@ function tabRow(
   bucket,
 ) {
   const classes = ["tab"];
-  if (markActive && tab.active) {
+  const active = markActive && tab.active;
+  if (active) {
     classes.push("active");
   }
   if (tab.discarded) {
@@ -135,6 +141,12 @@ function tabRow(
     favicon(tab),
     tabLabel(tab, label, bucket),
   );
+  if (active) {
+    open.setAttribute("aria-current", "true");
+  }
+  if (tab.discarded) {
+    open.append(visuallyHidden(" (unloaded)"));
+  }
   open.addEventListener("click", () => onOpen(tab));
 
   const close = el("button", {
@@ -167,7 +179,10 @@ function cardHeading(bucket, { onClose }) {
     heading.append(dot);
   }
 
-  const closeAllLabel = `Close all ${count} tabs in "${bucket.label}"`;
+  const closeAllLabel =
+    count === 1
+      ? `Close the tab in "${bucket.label}"`
+      : `Close all ${count} tabs in "${bucket.label}"`;
   const closeAll = el("button", {
     className: "close close-all",
     textContent: "Close all",
@@ -186,10 +201,20 @@ function cardHeading(bucket, { onClose }) {
       textContent: bucket.label,
       title: bucket.label,
     }),
-    el("span", { className: "n", textContent: String(count) }),
+    el(
+      "span",
+      { className: "n" },
+      String(count),
+      visuallyHidden(count === 1 ? " tab" : " tabs"),
+    ),
+  );
+  // Outside the heading, which would otherwise include the button's label.
+  return el(
+    "header",
+    { className: "card-header" },
+    heading,
     focusable(closeAll, `close-all:${bucket.id}`),
   );
-  return heading;
 }
 
 /**
