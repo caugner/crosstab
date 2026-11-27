@@ -69,7 +69,9 @@ function byId(id, type) {
 }
 
 const $cards = byId("cards", HTMLElement);
-const $count = byId("count", HTMLElement);
+const $tabCount = byId("tab-count", HTMLElement);
+const $duplicatesSep = byId("duplicates-sep", HTMLElement);
+const $duplicates = byId("duplicates", HTMLButtonElement);
 const $search = byId("search", HTMLInputElement);
 const $groupBy = byId("group-by", HTMLSelectElement);
 const $sortBy = byId("sort-by", HTMLSelectElement);
@@ -235,9 +237,15 @@ function render({ fresh = false } = {}) {
     data,
   );
   const duplicates = countDuplicates(tabs, data.urlCounts);
-  $count.textContent = duplicates
-    ? `(${tabs.length}, ${duplicates} duplicated)`
-    : `(${tabs.length})`;
+  const duplicatesActive = state.filter === FILTER_DUPLICATES;
+  $tabCount.textContent = plural(tabs.length, "tab");
+  $duplicatesSep.hidden = !duplicates;
+  $duplicates.hidden = !duplicates;
+  $duplicates.textContent = plural(duplicates, "duplicate");
+  $duplicates.setAttribute("aria-pressed", String(duplicatesActive));
+  $duplicates.title = duplicatesActive
+    ? "Show all tabs"
+    : "Show only duplicate tabs";
 
   if (!buckets.length) {
     state.layout = null;
@@ -284,6 +292,12 @@ $search.addEventListener("input", () => {
 });
 $filter.addEventListener("change", () => {
   state.filter = $filter.value;
+  renderFresh();
+});
+$duplicates.addEventListener("click", () => {
+  state.filter =
+    state.filter === FILTER_DUPLICATES ? FILTER_ALL : FILTER_DUPLICATES;
+  $filter.value = state.filter;
   renderFresh();
 });
 for (const [$select, key] of /** @type {const} */ ([
