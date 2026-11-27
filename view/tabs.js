@@ -65,11 +65,18 @@ export async function loadTabData() {
     allTabs.filter((tab) => !tab.url?.startsWith(VIEW_URL)).map(toTabInfo),
   );
 
+  const plan = planMerge(windows.map(toLayoutWindow), {
+    targetWindowId: currentWindow.id ?? -1,
+    asGroups: true,
+  });
+
   return {
     tabs,
-    mergeableWindows: windows.filter(
-      (win) => win.incognito === currentWindow.incognito,
-    ).length,
+    mergeable: {
+      windows: plan.windowCount,
+      tabs: plan.tabCount,
+      groups: plan.groupCount,
+    },
     urlCounts: countUrls(tabs),
     windowOrder: new Map(windows.map((win, i) => [win.id ?? -1, i])),
     currentWindowId: currentWindow.id ?? -1,

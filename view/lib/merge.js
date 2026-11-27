@@ -14,7 +14,7 @@ const NO_GROUP = -1;
 export function planMerge(windows, { targetWindowId, viewTabId, asGroups }) {
   const target = windows.find((win) => win.id === targetWindowId);
   if (!target) {
-    return { steps: [], windowCount: 0, tabCount: 0 };
+    return { steps: [], windowCount: 0, tabCount: 0, groupCount: 0 };
   }
   const sources = windows.filter(
     (win) => win.id !== target.id && win.incognito === target.incognito,
@@ -54,6 +54,7 @@ export function planMerge(windows, { targetWindowId, viewTabId, asGroups }) {
     }
   }
 
+  const sourceStart = steps.length;
   for (const win of sources) {
     const pinned = win.tabs.filter((tab) => tab.pinned).map((tab) => tab.id);
     if (pinned.length) {
@@ -94,6 +95,10 @@ export function planMerge(windows, { targetWindowId, viewTabId, asGroups }) {
     steps,
     windowCount: sources.length,
     tabCount: sources.reduce((sum, win) => sum + win.tabs.length, 0),
+    groupCount: steps
+      .slice(sourceStart)
+      .filter((step) => step.type === "group" || step.type === "moveGroup")
+      .length,
   };
 }
 

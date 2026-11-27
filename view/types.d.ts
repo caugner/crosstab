@@ -23,8 +23,8 @@ interface TabGroupInfo {
 
 interface TabData {
   tabs: TabInfo[];
-  /** Windows with the same privacy as the current one, including it. */
-  mergeableWindows: number;
+  /** Other windows with the same privacy as the current one, and their tabs. */
+  mergeable: { windows: number; tabs: number; groups: number };
   /** Window ID to position in the window list. */
   windowOrder: Map<number, number>;
   currentWindowId: number;
@@ -90,6 +90,8 @@ interface MergePlan {
   windowCount: number;
   /** Tabs moved into the target. */
   tabCount: number;
+  /** Tab groups moved or created from the merged windows. */
+  groupCount: number;
 }
 
 interface SavedGroup {
