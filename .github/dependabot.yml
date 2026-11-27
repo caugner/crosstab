@@ -1,0 +1,36 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    cooldown:
+      default-days: 3
+    groups:
+      npm-dev:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+      eslint:
+        patterns:
+          - "@eslint/*"
+          - eslint
+        update-types:
+          - major
+    commit-message:
+      prefix: chore
+      prefix-development: build
+      include: scope
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    cooldown:
+      default-days: 3
+    commit-message:
+      prefix: ci
+      include: scope
