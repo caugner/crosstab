@@ -10,15 +10,18 @@
   <body>
     <header>
       <div class="title-row">
-        <h1>
-          <img src="../icons/icon.svg" alt="" />
-          Crosstab
-          <span id="count" aria-live="polite"
+        <div class="brand">
+          <h1>
+            <img src="../icons/icon.svg" alt="" />
+            Crosstab
+          </h1>
+          <span id="count"
             ><span id="tab-count"></span
             ><span id="duplicates-sep" hidden> &middot; </span
             ><button id="duplicates" type="button" hidden></button
           ></span>
-        </h1>
+          <span id="search-status" class="visually-hidden" role="status"></span>
+        </div>
         <div class="actions">
           <button
             id="reorganise"
