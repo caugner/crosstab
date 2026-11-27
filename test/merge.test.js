@@ -3,6 +3,7 @@ import { test } from "node:test";
 
 import {
   planMerge,
+  planMirror,
   planRestore,
   snapshotLayout,
   windowCreateData,
@@ -150,6 +151,80 @@ test("planMerge counts merged windows, tabs, and groups", async (t) => {
   }
 });
 
+test("planMirror", async (t) => {
+  const windows = [
+    win(1, [[10, pinned], 11, 12]),
+    win(2, [20, [21, { groupId: 5 }]]),
+    win(3, [30], { incognito: true }),
+  ];
+  const cases = [
+    {
+      name: "parts become groups at the end, colors in turn",
+      parts: [
+        { tabIds: [21, 11], title: "a.com" },
+        { tabIds: [20], title: "b.com" },
+      ],
+      expected: {
+        steps: [
+          { type: "moveTabs", tabIds: [21, 11], index: -1 },
+          { type: "group", tabIds: [21, 11], title: "a.com", color: "blue" },
+          { type: "moveTabs", tabIds: [20], index: -1 },
+          { type: "group", tabIds: [20], title: "b.com", color: "purple" },
+        ],
+        tabCount: 3,
+        groupCount: 2,
+      },
+    },
+    {
+      name: "given color is kept",
+      parts: [{ tabIds: [21], title: "Work", color: "red" }],
+      expected: {
+        steps: [
+          { type: "moveTabs", tabIds: [21], index: -1 },
+          { type: "group", tabIds: [21], title: "Work", color: "red" },
+        ],
+        tabCount: 1,
+        groupCount: 1,
+      },
+    },
+    {
+      name: "untitled part is moved without a group",
+      parts: [{ tabIds: [20] }],
+      expected: {
+        steps: [{ type: "moveTabs", tabIds: [20], index: -1 }],
+        tabCount: 1,
+        groupCount: 0,
+      },
+    },
+    {
+      name: "pinned, private, closed, and view tabs stay",
+      viewTabId: 12,
+      parts: [{ tabIds: [10, 30, 99, 12], title: "x" }],
+      expected: { steps: [], tabCount: 0, groupCount: 0 },
+    },
+    {
+      name: "view tab moves after pinned tabs",
+      viewTabId: 12,
+      parts: [{ tabIds: [20], title: "x" }],
+      expected: {
+        steps: [
+          { type: "moveTabs", tabIds: [12], index: 1 },
+          { type: "moveTabs", tabIds: [20], index: -1 },
+          { type: "group", tabIds: [20], title: "x", color: "blue" },
+        ],
+        tabCount: 1,
+        groupCount: 1,
+      },
+    },
+  ];
+  for (const { name, viewTabId, parts, expected } of cases) {
+    await t.test(name, () => {
+      const options = { targetWindowId: 1, viewTabId };
+      assert.deepEqual(planMirror(windows, parts, options), expected);
+    });
+  }
+});
+
 test("snapshotLayout keeps the target's privacy and their groups", () => {
   const windows = [
     win(1, [[10, { groupId: 4 }]]),
@@ -228,6 +303,12 @@ test("planRestore", async (t) => {
       name: "window without open tabs is not recreated",
       tabIds: [10, 11, 20, 21, 22, 23],
       expected: [window2, target],
+    },
+    {
+      name: "open source window is reused",
+      tabIds: all,
+      windowIds: [1, 3],
+      expected: [window2, { ...window3, windowId: 3 }, target],
     },
     {
       name: "closed target window is recreated",

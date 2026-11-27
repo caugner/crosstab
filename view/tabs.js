@@ -1,5 +1,10 @@
 import { countUrls } from "./lib/grouping.js";
-import { planMerge, planRestore, snapshotLayout } from "./lib/merge.js";
+import {
+  planMerge,
+  planMirror,
+  planRestore,
+  snapshotLayout,
+} from "./lib/merge.js";
 
 const VIEW_URL = browser.runtime.getURL("view/index.html");
 
@@ -65,7 +70,8 @@ export async function loadTabData() {
     allTabs.filter((tab) => !tab.url?.startsWith(VIEW_URL)).map(toTabInfo),
   );
 
-  const plan = planMerge(windows.map(toLayoutWindow), {
+  const layout = windows.map(toLayoutWindow);
+  const plan = planMerge(layout, {
     targetWindowId: currentWindow.id ?? -1,
     asGroups: true,
   });
@@ -77,6 +83,7 @@ export async function loadTabData() {
       tabs: plan.tabCount,
       groups: plan.groupCount,
     },
+    layout,
     urlCounts: countUrls(tabs),
     windowOrder: new Map(windows.map((win, i) => [win.id ?? -1, i])),
     currentWindowId: currentWindow.id ?? -1,
@@ -128,6 +135,27 @@ export async function prepareMerge(asGroups) {
     targetWindowId,
     snapshot: snapshotLayout(layout, groups, targetWindowId),
     ...planMerge(layout, { targetWindowId, viewTabId: viewTab?.id, asGroups }),
+  };
+}
+
+/**
+ * Plans turning the parts into tab groups in the window showing this view.
+ *
+ * @param {MirrorPart[]} parts
+ */
+export async function prepareMirror(parts) {
+  const [windows, currentWindow, viewTab, groups] = await Promise.all([
+    browser.windows.getAll({ populate: true, windowTypes: ["normal"] }),
+    browser.windows.getCurrent(),
+    browser.tabs.getCurrent(),
+    browser.tabGroups.query({}),
+  ]);
+  const layout = windows.map(toLayoutWindow);
+  const targetWindowId = currentWindow.id ?? -1;
+  return {
+    targetWindowId,
+    snapshot: snapshotLayout(layout, groups, targetWindowId),
+    ...planMirror(layout, parts, { targetWindowId, viewTabId: viewTab?.id }),
   };
 }
 
