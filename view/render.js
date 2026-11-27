@@ -170,7 +170,7 @@ function cardHeading(bucket, { onClose }) {
   const closeAllLabel = `Close all ${count} tabs in "${bucket.label}"`;
   const closeAll = el("button", {
     className: "close close-all",
-    textContent: "×",
+    textContent: "Close all",
     title: closeAllLabel,
     ariaLabel: closeAllLabel,
   });

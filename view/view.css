@@ -227,9 +227,27 @@ input[type="search"] {
   content: "";
 }
 
-.close-all {
+.card h2 .close-all {
+  flex: none;
   margin-inline-start: auto;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
   font-weight: normal;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.card:hover .close-all,
+.card:focus-within .close-all,
+.card h2 .close-all:focus-visible {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .card h2 .close-all {
+    opacity: 1;
+  }
 }
 
 .dot {
