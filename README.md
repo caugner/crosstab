@@ -12,7 +12,7 @@ A Firefox extension that shows all open tabs across windows on one page, so you 
 - **Merge windows** moves all tabs into the Crosstab window, with the Crosstab tab first. **Merge as groups** also puts each window's ungrouped tabs into a `Window N` tab group. Existing tab groups move as they are, and private windows are merged only with each other. **Undo merge** restores the previous windows and groups while the Crosstab tab stays open.
 - Updates live as tabs change, and keeps items in place while the pointer is over them.
 
-Clicking the toolbar button opens Crosstab, or switches to it if it is already open.
+Clicking the toolbar button opens Crosstab, or moves it into the current window if it is already open.
 
 ## Notes
 
