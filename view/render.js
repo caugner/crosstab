@@ -19,6 +19,7 @@ export const LABEL_MODES = ["title", "url", "both"];
  * @property {Map<string, number>} urlCounts
  * @property {(tab: TabInfo) => void} onOpen
  * @property {(tabs: TabInfo[]) => void} onClose
+ * @property {(tab: TabInfo) => void} onCloseCopies
  * @property {(bucketId: string) => void} onToggle
  */
 
@@ -85,13 +86,22 @@ function favicon(tab) {
   return icon;
 }
 
-/** @param {number} copies */
-function duplicateBadge(copies) {
-  return el("span", {
+/**
+ * @param {TabInfo} tab
+ * @param {number} copies
+ * @param {(tab: TabInfo) => void} onCloseCopies
+ */
+function duplicateBadge(tab, copies, onCloseCopies) {
+  const others = copies - 1;
+  const label = `Close ${others} other ${others === 1 ? "tab" : "tabs"} with this URL`;
+  const badge = el("button", {
     className: "dup",
-    textContent: `×${copies}`,
-    title: `${copies} tabs with this URL`,
+    textContent: String(copies),
+    title: label,
+    ariaLabel: label,
   });
+  badge.addEventListener("click", () => onCloseCopies(tab));
+  return focusable(badge, `copies:${tab.id}`);
 }
 
 /**
@@ -101,7 +111,7 @@ function duplicateBadge(copies) {
  */
 function tabRow(
   tab,
-  { label, markActive, urlCounts, onOpen, onClose },
+  { label, markActive, urlCounts, onOpen, onClose, onCloseCopies },
   bucket,
 ) {
   const classes = ["tab"];
@@ -117,10 +127,6 @@ function tabRow(
     favicon(tab),
     tabLabel(tab, label, bucket),
   );
-  const copies = urlCounts.get(duplicateKey(tab.url)) ?? 0;
-  if (copies > 1) {
-    open.append(duplicateBadge(copies));
-  }
   open.addEventListener("click", () => onOpen(tab));
 
   const close = el("button", {
@@ -131,12 +137,13 @@ function tabRow(
   });
   close.addEventListener("click", () => onClose([tab]));
 
-  return el(
-    "li",
-    {},
-    focusable(open, `open:${tab.id}`),
-    focusable(close, `close:${tab.id}`),
-  );
+  const li = el("li", {}, focusable(open, `open:${tab.id}`));
+  const copies = urlCounts.get(duplicateKey(tab.url)) ?? 0;
+  if (copies > 1) {
+    li.append(duplicateBadge(tab, copies, onCloseCopies));
+  }
+  li.append(focusable(close, `close:${tab.id}`));
+  return li;
 }
 
 /**

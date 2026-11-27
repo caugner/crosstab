@@ -29,6 +29,18 @@ export function isDuplicate(tab, urlCounts) {
 
 /**
  * @param {TabInfo[]} tabs
+ * @param {TabInfo} tab
+ * @returns {TabInfo[]} The tabs other than `tab` with the same URL.
+ */
+export function otherCopies(tabs, tab) {
+  const key = duplicateKey(tab.url);
+  return tabs.filter(
+    (other) => other.id !== tab.id && duplicateKey(other.url) === key,
+  );
+}
+
+/**
+ * @param {TabInfo[]} tabs
  * @param {Map<string, number>} urlCounts
  */
 export function countDuplicates(tabs, urlCounts) {
