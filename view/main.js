@@ -148,6 +148,7 @@ function updateMergeButtons() {
   const disabled = state.data.mergeableWindows < 2;
   $merge.disabled = disabled;
   $mergeGroups.disabled = disabled;
+  $merge.hidden = $mergeGroups.hidden = state.groupBy !== "window";
   $undoMerge.hidden = sessionStorage.getItem(UNDO_KEY) === null;
 }
 
@@ -308,6 +309,7 @@ for (const [$select, key] of /** @type {const} */ ([
   $select.addEventListener("change", () => {
     state[key] = $select.value;
     localStorage.setItem(key, $select.value);
+    updateMergeButtons();
     renderFresh();
   });
 }

@@ -9,14 +9,23 @@
   </head>
   <body>
     <header>
-      <h1>
-        Open tabs
-        <span id="count" aria-live="polite"
-          ><span id="tab-count"></span
-          ><span id="duplicates-sep" hidden> &middot; </span
-          ><button id="duplicates" type="button" hidden></button
-        ></span>
-      </h1>
+      <div class="title-row">
+        <h1>
+          Open tabs
+          <span id="count" aria-live="polite"
+            ><span id="tab-count"></span
+            ><span id="duplicates-sep" hidden> &middot; </span
+            ><button id="duplicates" type="button" hidden></button
+          ></span>
+        </h1>
+        <div class="actions">
+          <button id="merge" type="button" disabled>Merge windows</button>
+          <button id="merge-groups" type="button" disabled>
+            Merge as groups
+          </button>
+          <button id="undo-merge" type="button" hidden>Undo merge</button>
+        </div>
+      </div>
       <div class="controls">
         <input
           id="search"
@@ -59,13 +68,6 @@
             <option value="">All</option>
           </select>
         </label>
-        <div class="actions">
-          <button id="merge" type="button" disabled>Merge windows</button>
-          <button id="merge-groups" type="button" disabled>
-            Merge as groups
-          </button>
-          <button id="undo-merge" type="button" hidden>Undo merge</button>
-        </div>
       </div>
     </header>
     <main id="cards"></main>
