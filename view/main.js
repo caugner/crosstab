@@ -218,6 +218,7 @@ function showCards(nodes) {
  */
 function render({ fresh = false } = {}) {
   const { data, groupBy, sortBy, expanded } = state;
+  $cards.dataset.groupBy = groupBy;
   const gap = parseFloat(getComputedStyle($cards).columnGap) || 0;
   const count = columnCount($cards.clientWidth, COLUMN_MIN_WIDTH, gap);
   const previous =

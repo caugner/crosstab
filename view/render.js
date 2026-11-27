@@ -199,7 +199,7 @@ function card(bucket, options) {
   const expanded = options.expanded.has(bucket.id);
   const section = el(
     "section",
-    { className: "card" },
+    { className: bucket.current ? "card current" : "card" },
     cardHeading(bucket, options),
     ...cardBody(bucket, expanded, options),
   );
