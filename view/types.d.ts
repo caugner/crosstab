@@ -43,6 +43,8 @@ interface BucketInfo {
   current?: boolean;
   /** Set if all tabs share this domain. */
   domain?: string;
+  /** Set if the bucket collects tabs of unrelated domains. */
+  mixed?: boolean;
 }
 
 interface Section extends BucketInfo {

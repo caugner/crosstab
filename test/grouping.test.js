@@ -177,10 +177,13 @@ test("groupTabs", async (t) => {
 
   await t.test("orders buckets without order by size, then label", () => {
     const tabs = [
-      "https://b.test",
+      "https://b.test/1",
       "https://c.test/1",
-      "https://a.test",
+      "https://a.test/1",
       "https://c.test/2",
+      "https://b.test/2",
+      "https://a.test/2",
+      "https://c.test/3",
     ].map((url) => makeTab({ url }));
     const buckets = groupTabs(
       tabs,
@@ -191,6 +194,82 @@ test("groupTabs", async (t) => {
       buckets.map(({ id }) => id),
       ["domain:c.test", "domain:a.test", "domain:b.test"],
     );
+  });
+
+  await t.test(
+    "collects single-tab domains into one last bucket",
+    async (t) => {
+      const urls = [
+        "https://s1.test",
+        "https://a.test/1",
+        "https://s2.test",
+        "https://a.test/2",
+      ];
+      const [s1, a1, s2, a2] = urls.map((url) => makeTab({ url }));
+      const cases = [
+        {
+          name: "several singles",
+          tabs: [s1, a1, s2, a2],
+          groupBy: "domain",
+          expected: [
+            ["domain:a.test", [a1, a2]],
+            ["domain:(other)", [s1, s2]],
+          ],
+        },
+        {
+          name: "lone single",
+          tabs: [s1, a1, a2],
+          groupBy: "domain",
+          expected: [
+            ["domain:a.test", [a1, a2]],
+            ["domain:s1.test", [s1]],
+          ],
+        },
+        {
+          name: "only singles",
+          tabs: [s1, s2],
+          groupBy: "domain",
+          expected: [["domain:(other)", [s1, s2]]],
+        },
+        {
+          name: "other groupings never collect",
+          tabs: [s1, a1, s2, a2],
+          groupBy: "window",
+          expected: [["window:1", [s1, a1, s2, a2]]],
+        },
+      ];
+      for (const { name, tabs, groupBy, expected } of cases) {
+        await t.test(name, () => {
+          const buckets = groupTabs(
+            tabs,
+            { groupBy, sortBy: "order" },
+            CONTEXT,
+          );
+          assert.deepEqual(
+            buckets.map(({ id, tabs }) => [id, tabs]),
+            expected,
+          );
+          assert.deepEqual(
+            buckets.filter(({ mixed }) => mixed).map(({ label }) => label),
+            expected.some(([id]) => id === "domain:(other)")
+              ? ["Other domains"]
+              : [],
+          );
+        });
+      }
+    },
+  );
+
+  await t.test("orders collected tabs like the sorted list", () => {
+    const [c, a, b] = ["c", "a", "b"].map((title) =>
+      makeTab({ title, url: `https://${title}.test` }),
+    );
+    const buckets = groupTabs(
+      [c, a, b],
+      { groupBy: "domain", sortBy: "title" },
+      CONTEXT,
+    );
+    assert.deepEqual(buckets[0].tabs, [a, b, c]);
   });
 
   await t.test("puts ungrouped tabs last", () => {
@@ -270,6 +349,27 @@ test("groupTabs", async (t) => {
           tabs: [d],
           sections: [["Window 2 (Current)", [d]]],
         },
+      ],
+    );
+  });
+
+  await t.test("collected bucket of domainWindow has sections", () => {
+    const [a, b, c] = [
+      { url: "https://a.test", windowId: 2 },
+      { url: "https://b.test", windowId: 1 },
+      { url: "https://c.test", windowId: 2 },
+    ].map(makeTab);
+    const [bucket] = groupTabs(
+      [a, b, c],
+      { groupBy: "domainWindow", sortBy: "order" },
+      CONTEXT,
+    );
+    assert.equal(bucket.id, "domainWindow:(other)");
+    assert.deepEqual(
+      bucket.sections.map(({ label, tabs }) => [label, tabs]),
+      [
+        ["Window 1", [b]],
+        ["Window 2 (Current)", [a, c]],
       ],
     );
   });

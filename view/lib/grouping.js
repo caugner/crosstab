@@ -65,6 +65,32 @@ const SECTIONINGS = {
 /** Groupings that list tabs per window, where each window's active tab matters. */
 export const PER_WINDOW_GROUPINGS = new Set(["window", "domainWindow"]);
 
+/** Groupings whose single-tab buckets are collected into one bucket. */
+const COLLECTING = new Set(["domain", "domainWindow"]);
+
+/**
+ * @param {Section[]} parts
+ * @param {TabInfo[]} sorted
+ * @returns {Section[]}
+ */
+function collectSingles(parts, sorted) {
+  const singles = new Set(
+    parts.filter((part) => part.tabs.length === 1).map((part) => part.tabs[0]),
+  );
+  if (singles.size < 2) {
+    return parts;
+  }
+  return [
+    ...parts.filter((part) => part.tabs.length > 1),
+    {
+      key: "(other)",
+      label: "Other domains",
+      mixed: true,
+      tabs: sorted.filter((tab) => singles.has(tab)),
+    },
+  ];
+}
+
 /** @type {Record<string, (context: Pick<TabData, "windowOrder">) => TabComparator>} */
 export const SORTERS = {
   recent: () => (a, b) => b.lastAccessed - a.lastAccessed,
@@ -140,21 +166,23 @@ export function groupTabs(tabs, { groupBy, sortBy, ranks = null }, context) {
   const sorted = tabs.toSorted(comparator);
 
   const sectionOf = SECTIONINGS[groupBy];
-  return partition(sorted, (tab) => GROUPINGS[groupBy](tab, context)).map(
-    (part) => {
-      const id = `${groupBy}:${part.key}`;
-      if (!sectionOf) {
-        return { ...part, id };
-      }
-      const sections = partition(part.tabs, (tab) => sectionOf(tab, context));
-      return {
-        ...part,
-        id,
-        sections,
-        tabs: sections.flatMap((section) => section.tabs),
-      };
-    },
-  );
+  let parts = partition(sorted, (tab) => GROUPINGS[groupBy](tab, context));
+  if (COLLECTING.has(groupBy)) {
+    parts = collectSingles(parts, sorted);
+  }
+  return parts.map((part) => {
+    const id = `${groupBy}:${part.key}`;
+    if (!sectionOf) {
+      return { ...part, id };
+    }
+    const sections = partition(part.tabs, (tab) => sectionOf(tab, context));
+    return {
+      ...part,
+      id,
+      sections,
+      tabs: sections.flatMap((section) => section.tabs),
+    };
+  });
 }
 
 /**
