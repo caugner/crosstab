@@ -1,4 +1,5 @@
 :root {
+  scrollbar-gutter: stable;
   color-scheme: light dark;
   --bg: light-dark(#f9f9fb, #1c1b22);
   --card: light-dark(#fff, #2b2a33);
