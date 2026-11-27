@@ -4,7 +4,7 @@ import {
   visibleSections,
   visibleTabs,
 } from "./lib/layout.js";
-import { displayUrl, duplicateKey } from "./lib/url.js";
+import { displayPath, displayUrl, duplicateKey } from "./lib/url.js";
 
 const FALLBACK_ICON = "../icons/globe.svg";
 
@@ -50,9 +50,12 @@ function focusable(node, key) {
 /**
  * @param {TabInfo} tab
  * @param {string} mode
+ * @param {BucketInfo} bucket
  */
-function tabLabel(tab, mode) {
-  const url = displayUrl(tab.url);
+function tabLabel(tab, mode, bucket) {
+  // The card heading already names the domain.
+  const url =
+    bucket.domain === undefined ? displayUrl(tab.url) : displayPath(tab.url);
   if (mode === "url") {
     return el("span", { className: "title", textContent: url });
   }
@@ -94,8 +97,13 @@ function duplicateBadge(copies) {
 /**
  * @param {TabInfo} tab
  * @param {RenderOptions} options
+ * @param {BucketInfo} bucket
  */
-function tabRow(tab, { label, markActive, urlCounts, onOpen, onClose }) {
+function tabRow(
+  tab,
+  { label, markActive, urlCounts, onOpen, onClose },
+  bucket,
+) {
   const classes = ["tab"];
   if (markActive && tab.active) {
     classes.push("active");
@@ -107,7 +115,7 @@ function tabRow(tab, { label, markActive, urlCounts, onOpen, onClose }) {
     "button",
     { className: classes.join(" "), title: `${tab.title}\n${tab.url}` },
     favicon(tab),
-    tabLabel(tab, label),
+    tabLabel(tab, label, bucket),
   );
   const copies = urlCounts.get(duplicateKey(tab.url)) ?? 0;
   if (copies > 1) {
@@ -172,9 +180,10 @@ function cardHeading(bucket, { onClose }) {
 /**
  * @param {TabInfo[]} tabs
  * @param {RenderOptions} options
+ * @param {BucketInfo} bucket
  */
-function tabList(tabs, options) {
-  return el("ul", {}, ...tabs.map((tab) => tabRow(tab, options)));
+function tabList(tabs, options, bucket) {
+  return el("ul", {}, ...tabs.map((tab) => tabRow(tab, options, bucket)));
 }
 
 /**
@@ -184,11 +193,11 @@ function tabList(tabs, options) {
  */
 function cardBody(bucket, expanded, options) {
   if (!bucket.sections) {
-    return [tabList(visibleTabs(bucket, expanded), options)];
+    return [tabList(visibleTabs(bucket, expanded), options, bucket)];
   }
   return visibleSections(bucket, expanded).flatMap((section) => [
     el("h3", { textContent: section.label }),
-    tabList(section.tabs, options),
+    tabList(section.tabs, options, bucket),
   ]);
 }
 

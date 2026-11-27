@@ -58,7 +58,11 @@ test("GROUPINGS", async (t) => {
       name: "domain",
       groupBy: "domain",
       tab: { url: "https://www.example.org/a" },
-      expected: { key: "example.org", label: "example.org" },
+      expected: {
+        key: "example.org",
+        label: "example.org",
+        domain: "example.org",
+      },
     },
     {
       name: "tab group ordered by its window",
