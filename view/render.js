@@ -9,7 +9,7 @@ import { displayPath, displayUrl, domainOf, duplicateKey } from "./lib/url.js";
 const FALLBACK_ICON = "../icons/globe.svg";
 
 /** What to show per tab; the first is the default. */
-export const LABEL_MODES = ["title", "url", "both"];
+export const LABEL_MODES = ["both", "title", "url"];
 
 /**
  * @typedef {object} RenderOptions
