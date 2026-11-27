@@ -79,6 +79,8 @@ const $groupBy = byId("group-by", HTMLSelectElement);
 const $sortBy = byId("sort-by", HTMLSelectElement);
 const $filter = byId("filter", HTMLSelectElement);
 const $label = byId("label", HTMLSelectElement);
+const $customize = byId("customize", HTMLButtonElement);
+const $customizePanel = byId("customize-panel", HTMLElement);
 const $merge = byId("merge", HTMLButtonElement);
 const $mergeGroups = byId("merge-groups", HTMLButtonElement);
 const $undoMerge = byId("undo-merge", HTMLButtonElement);
@@ -337,6 +339,41 @@ for (const [$select, key] of /** @type {const} */ ([
     renderFresh();
   });
 }
+
+const $customizeClose = byId("customize-close", HTMLButtonElement);
+
+/** @param {boolean} open */
+function setCustomizeOpen(open) {
+  $customizePanel.classList.toggle("open", open);
+  $customizePanel.inert = !open;
+  $customize.setAttribute("aria-expanded", String(open));
+}
+$customize.addEventListener("click", () => {
+  const open = $customize.getAttribute("aria-expanded") !== "true";
+  setCustomizeOpen(open);
+  if (open) {
+    $customizeClose.focus();
+  }
+});
+$customizeClose.addEventListener("click", () => {
+  setCustomizeOpen(false);
+  $customize.focus();
+});
+document.addEventListener("click", (event) => {
+  const target = /** @type {Node} */ (event.target);
+  if (!$customizePanel.contains(target) && !$customize.contains(target)) {
+    setCustomizeOpen(false);
+  }
+});
+document.addEventListener("keydown", (event) => {
+  if (
+    event.key === "Escape" &&
+    $customize.getAttribute("aria-expanded") === "true"
+  ) {
+    setCustomizeOpen(false);
+    $customize.focus();
+  }
+});
 
 $merge.addEventListener("click", () => {
   mergeWindows(false).catch(reportError);
