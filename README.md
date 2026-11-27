@@ -35,11 +35,11 @@ npm run build  # package into web-ext-artifacts/
 
 ## AMO listing
 
-The listing description and links live in `amo-metadata.json` and are applied on every release. The icon and screenshots live in `listing/`.
+The listing description and links live in `amo-metadata.json` and are applied on every release. The icon and screenshots live in `listing/`. The `Listing` workflow uploads them whenever `listing/` or `amo-metadata.json` changes on `main`, or when run manually.
 
 ```sh
 npm run screenshots  # recapture listing/screenshots/ in headless Firefox (needs network)
-AMO_JWT_ISSUER=... AMO_JWT_SECRET=... npm run listing  # upload metadata, icon, and screenshots
+AMO_JWT_ISSUER=... AMO_JWT_SECRET=... npm run listing  # upload by hand, as the workflow does
 ```
 
 ## Releasing
