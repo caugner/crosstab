@@ -18,6 +18,7 @@
   --card-border: linear-gradient(var(--border), var(--border));
   --field-hover: light-dark(#d3c8ec, #4a3f6e);
   --chevron: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="%2315141a" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m3.5 6 4.5 4.5L12.5 6"/></svg>');
+  --magnifier: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="%2315141a" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="7" r="4.75"/><path d="m10.5 10.5 3.75 3.75"/></svg>');
   font:
     15px/1.4 system-ui,
     sans-serif;
@@ -27,6 +28,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --chevron: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="%23fbfbfe" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m3.5 6 4.5 4.5L12.5 6"/></svg>');
+    --magnifier: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="%23fbfbfe" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="7" r="4.75"/><path d="m10.5 10.5 3.75 3.75"/></svg>');
   }
 }
 
@@ -130,8 +132,42 @@ select:focus-visible {
   outline-offset: -1px;
 }
 
+.search {
+  position: relative;
+}
+
 input[type="search"] {
+  box-sizing: border-box;
   width: 16rem;
+  padding-inline: 2.25rem;
+  background: var(--card) var(--magnifier) no-repeat left 0.75rem center / 1rem;
+}
+
+/* Replaced by #search-clear, which also works with the mouse. */
+input[type="search"]::-moz-search-clear-button {
+  display: none;
+}
+
+#search-clear {
+  position: absolute;
+  inset-inline-end: 0.35rem;
+  top: 50%;
+  translate: 0 -50%;
+  padding: 0.3rem;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--text);
+  line-height: 0;
+  cursor: pointer;
+}
+
+#search-clear:hover {
+  background: var(--hover);
+}
+
+#search-clear:focus-visible {
+  outline: 2px solid var(--accent);
 }
 
 .actions {

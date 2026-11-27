@@ -73,6 +73,7 @@ const $tabCount = byId("tab-count", HTMLElement);
 const $duplicatesSep = byId("duplicates-sep", HTMLElement);
 const $duplicates = byId("duplicates", HTMLButtonElement);
 const $search = byId("search", HTMLInputElement);
+const $searchClear = byId("search-clear", HTMLButtonElement);
 const $groupBy = byId("group-by", HTMLSelectElement);
 const $sortBy = byId("sort-by", HTMLSelectElement);
 const $suggestions = byId("search-suggestions", HTMLDataListElement);
@@ -315,14 +316,23 @@ $groupBy.value = state.groupBy;
 $sortBy.value = state.sortBy;
 $label.value = state.label;
 
-$search.addEventListener("input", () => {
+/** @param {string} value */
+function setSearch(value) {
+  $search.value = value;
+  searchChanged();
+}
+function searchChanged() {
   state.query = $search.value.trim();
+  $searchClear.hidden = !$search.value;
   renderFresh();
+}
+$search.addEventListener("input", searchChanged);
+$searchClear.addEventListener("click", () => {
+  setSearch("");
+  $search.focus();
 });
 $duplicates.addEventListener("click", () => {
-  $search.value = toggleDuplicateKeyword($search.value);
-  state.query = $search.value.trim();
-  renderFresh();
+  setSearch(toggleDuplicateKeyword($search.value));
 });
 for (const [$select, key] of /** @type {const} */ ([
   [$groupBy, "groupBy"],

@@ -42,14 +42,32 @@
         </div>
       </div>
       <div class="controls">
-        <input
-          id="search"
-          type="search"
-          list="search-suggestions"
-          placeholder="Search open tabs"
-          aria-label="Search open tabs"
-          autofocus
-        />
+        <div class="search">
+          <input
+            id="search"
+            type="search"
+            list="search-suggestions"
+            placeholder="Search open tabs"
+            aria-label="Search open tabs"
+            autofocus
+          />
+          <button
+            id="search-clear"
+            type="button"
+            aria-label="Clear search"
+            hidden
+          >
+            <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+              <path
+                d="m4 4 8 8m0-8-8 8"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
         <label>
           Group by
           <select id="group-by">
