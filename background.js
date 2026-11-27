@@ -1,14 +1,21 @@
 const VIEW_URL = browser.runtime.getURL("view/index.html");
 
-browser.action.onClicked.addListener(async () => {
+// Moving an open view keeps its state (search, expanded cards, undo), and
+// makes the clicked window the target of "Move … into this window".
+browser.action.onClicked.addListener(async ({ windowId, incognito }) => {
   const tabs = await browser.tabs.query({});
-  const existing = tabs.find((tab) => tab.url === VIEW_URL);
-  if (existing?.id === undefined || existing.windowId === undefined) {
-    await browser.tabs.create({ url: VIEW_URL });
+  // Tabs cannot move between private and normal windows.
+  const existing = tabs.find(
+    (tab) => tab.url === VIEW_URL && tab.incognito === incognito,
+  );
+  if (existing?.id === undefined) {
+    await browser.tabs.create({ url: VIEW_URL, windowId });
     return;
   }
+  if (existing.windowId !== windowId) {
+    await browser.tabs.move(existing.id, { windowId, index: -1 });
+  }
   await browser.tabs.update(existing.id, { active: true });
-  await browser.windows.update(existing.windowId, { focused: true });
 });
 
 // The tabs API has no creation timestamp, so record one as a session value
