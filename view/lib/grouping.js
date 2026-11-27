@@ -62,6 +62,9 @@ const SECTIONINGS = {
   domainWindow: GROUPINGS.window,
 };
 
+/** Groupings that list tabs per window, where each window's active tab matters. */
+export const PER_WINDOW_GROUPINGS = new Set(["window", "domainWindow"]);
+
 /** @type {Record<string, (context: Pick<TabData, "windowOrder">) => TabComparator>} */
 export const SORTERS = {
   recent: () => (a, b) => b.lastAccessed - a.lastAccessed,

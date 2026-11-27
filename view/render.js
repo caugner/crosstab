@@ -14,6 +14,7 @@ export const LABEL_MODES = ["title", "url", "both"];
 /**
  * @typedef {object} RenderOptions
  * @property {string} label Which of title, URL, or both to show per tab.
+ * @property {boolean} markActive Whether to emphasize each window's active tab.
  * @property {Set<string>} expanded IDs of expanded buckets.
  * @property {Map<string, number>} urlCounts
  * @property {(tab: TabInfo) => void} onOpen
@@ -94,9 +95,9 @@ function duplicateBadge(copies) {
  * @param {TabInfo} tab
  * @param {RenderOptions} options
  */
-function tabRow(tab, { label, urlCounts, onOpen, onClose }) {
+function tabRow(tab, { label, markActive, urlCounts, onOpen, onClose }) {
   const classes = ["tab"];
-  if (tab.active) {
+  if (markActive && tab.active) {
     classes.push("active");
   }
   if (tab.discarded) {
